@@ -1,0 +1,14 @@
+# Environment variables
+.env
+generated/
+node_modules/.prisma/
+
+# Common ignores
+node_modules
+.next/
+.DS_Store
+custom_constraints.sql
+*.log
+prisma/migrations
+prisma/seed.ts
+

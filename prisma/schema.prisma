@@ -1,0 +1,229 @@
+// Surabhi Alumni Memory Book — Prisma Schema
+// Database: PostgreSQL via NeonDB
+// Prisma 7: connection URLs live in prisma.config.ts, NOT here
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+datasource db {
+  provider = "postgresql"
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  MODERATOR
+}
+
+enum SocialPlatform {
+  LINKEDIN
+  INSTAGRAM
+  GITHUB
+  TWITTER
+  PORTFOLIO
+}
+
+enum NotificationType {
+  REMINDER_DAY_5
+  REMINDER_DAY_10
+  REMINDER_DAY_15
+  REMINDER_DAY_18
+  REMINDER_DAY_19
+  REMINDER_DAY_20
+  SUMMARY_PUBLISHED
+  WELCOME
+}
+
+enum AuditAction {
+  SUMMARY_GENERATED
+  SUMMARY_EDITED
+  SUMMARY_APPROVED
+  SUMMARY_REJECTED
+  MESSAGE_VIEWED
+  USER_ONBOARDED
+  WINDOW_UPDATED
+  LIMIT_UPDATED
+}
+
+model User {
+  id                 String   @id @default(uuid())
+  enrollmentNumber   String   @unique
+  fullName           String
+  email              String   @unique
+  mobile             String   @unique
+  profilePictureUrl  String?
+  nickname           String?
+  bio                String?
+  isProfileCompleted Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  socialProfiles   SocialProfile[]
+  messagesSent     Message[]       @relation("MessageSender")
+  messagesReceived Message[]       @relation("MessageRecipient")
+  aiSummary        AiSummary?
+  otps             AuthOtp[]
+  onboardingLink   OnboardingLink?
+  notifications    Notification[]
+
+  @@map("users")
+}
+
+model SocialProfile {
+  id         String         @id @default(uuid())
+  userId     String
+  platform   SocialPlatform
+  profileUrl String
+  isActive   Boolean        @default(true)
+  isVerified Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, platform, isActive])
+  @@map("social_profiles")
+}
+
+model OnboardingLink {
+  id               String    @id @default(uuid())
+  userId           String    @unique
+  token            String    @unique
+  enrollmentNumber String
+  mobile           String
+  isUsed           Boolean   @default(false)
+  usedAt           DateTime?
+  expiresAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("onboarding_links")
+}
+
+model AuthOtp {
+  id        String   @id @default(uuid())
+  userId    String
+  otpCode   String
+  expiresAt DateTime
+  isUsed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isUsed])
+  @@map("auth_otps")
+}
+
+model MessageWindow {
+  id        String   @id @default(uuid())
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("message_window")
+}
+
+model MessageLimit {
+  id               String   @id @default(uuid())
+  maxPerUser       Int      @default(100)
+  minCharacters    Int      @default(400)
+  maxCharacters    Int      @default(600)
+  updatedAt        DateTime @updatedAt
+  updatedByAdminId String?
+
+  @@map("message_limits")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  senderId       String
+  recipientId    String
+  messageText    String
+  characterCount Int
+  createdAt      DateTime @default(now())
+
+  sender    User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId])
+  @@index([senderId])
+  @@map("messages")
+}
+
+model AiSummary {
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  summaryText   String?
+  generatedByAi Boolean   @default(true)
+  isApproved    Boolean   @default(false)
+  approvedAt    DateTime?
+  approvedById  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_summaries")
+}
+
+model AdminUser {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(MODERATOR)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  auditLogs AuditLog[]
+
+  @@map("admin_users")
+}
+
+model AuditLog {
+  id           String      @id @default(uuid())
+  adminId      String
+  action       AuditAction
+  targetUserId String?
+  metadata     Json?
+  createdAt    DateTime    @default(now())
+
+  admin AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([targetUserId])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false)
+  sentAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model AlumniShowcase {
+  id           String   @id @default(uuid())
+  name         String
+  role         String
+  company      String
+  imageUrl     String?
+  displayOrder Int      @default(0)
+  isVisible    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("alumni_showcase")
+}

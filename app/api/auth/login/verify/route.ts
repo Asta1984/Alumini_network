@@ -1,13 +1,11 @@
-// ── OTP Verification ─────────────────────────────────────────────────────────
-// POST /api/auth/login/verify
-// Separate endpoint to keep concerns clean
+// app/api/auth/login/verify/route.ts
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateToken } from '@/lib/auth'
+import { verifyOtp } from '@/lib/otp'
 
-
-export async function PUT(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const { identifier, otp } = await request.json()
 
@@ -18,7 +16,6 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Find user
     const user = await prisma.user.findFirst({
       where: {
         OR: [
@@ -36,13 +33,9 @@ export async function PUT(request: NextRequest) {
     })
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
-    // Find latest unused OTP
     const otpRecord = await prisma.authOtp.findFirst({
       where: {
         userId: user.id,
@@ -59,24 +52,17 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Verify OTP
-    const { verifyOtp } = await import('@/lib/otp')
     const isValid = await verifyOtp(otp, otpRecord.otpCode)
 
     if (!isValid) {
-      return NextResponse.json(
-        { error: 'Invalid OTP' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Invalid OTP' }, { status: 401 })
     }
 
-    // Mark OTP as used
     await prisma.authOtp.update({
       where: { id: otpRecord.id },
       data: { isUsed: true },
     })
 
-    // Generate JWT
     const token = generateToken({
       userId: user.id,
       email: user.email,
@@ -96,16 +82,12 @@ export async function PUT(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
+      maxAge: 7 * 24 * 60 * 60,
     })
 
     return response
   } catch (error) {
     console.error('[auth/login/verify] Error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-

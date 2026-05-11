@@ -1,112 +1,156 @@
-'use client';
+// app/login/page.tsx
+// 2-step OTP login: identifier → OTP entry
+// Uses Zustand auth store
 
-import { useAuth } from '@/lib/auth-context';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+'use client'
 
-export default function Home() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useAuthStore } from '@/store/auth.store'
 
-  useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated) {
-        router.push('/dashboard');
-      }
+export default function LoginPage() {
+  const router = useRouter()
+  const { loginStep, maskedEmail, requestOtp, verifyOtp, resetLoginFlow } = useAuthStore()
+
+  const [identifier, setIdentifier] = useState('')
+  const [otp, setOtp] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleRequestOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!identifier.trim()) {
+      setError('Email or mobile number is required')
+      return
     }
-  }, [isLoading, isAuthenticated, router]);
+    setLoading(true)
+    try {
+      await requestOtp(identifier.trim())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send OTP')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!otp.trim()) {
+      setError('Please enter the OTP')
+      return
+    }
+    setLoading(true)
+    try {
+      await verifyOtp(otp.trim())
+      router.push('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid OTP')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto px-4 py-6 flex items-center justify-between">
-          <div>
-            <h1 className="md:text-3xl font-bold text-foreground">Campus Connect</h1>
-            <p className="text-sm text-muted-foreground">Student Social Network</p>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md">
+        <div className="bg-card rounded-lg shadow-lg border border-border p-8">
+
+          {/* Logo / Title */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-foreground">Surabhi</h1>
+            <p className="text-muted-foreground mt-1">Alumni Memory Book</p>
           </div>
-          <div className="flex gap-2">
-            <Link href="/login">
-              <Button variant="outline" className="border-border text-foreground hover:bg-secondary">
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/signup">
-              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                Get Started
-              </Button>
-            </Link>
-          </div>
+
+          {loginStep === 'identifier' ? (
+            <>
+              <h2 className="text-xl font-semibold text-foreground mb-1">Sign in</h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                Enter your registered email or mobile number
+              </p>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleRequestOtp} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Email or Mobile
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="you@institution.edu or 9876543210"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    disabled={loading}
+                    autoFocus
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  {loading ? 'Sending OTP...' : 'Send OTP'}
+                </Button>
+              </form>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-semibold text-foreground mb-1">Enter OTP</h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                A 6-digit OTP was sent to <span className="font-medium text-foreground">{maskedEmail}</span>
+              </p>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    OTP
+                  </label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="483920"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                    disabled={loading}
+                    autoFocus
+                    className="tracking-widest text-center text-xl"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  {loading ? 'Verifying...' : 'Verify OTP'}
+                </Button>
+              </form>
+
+              <button
+                onClick={() => { resetLoginFlow(); setError(''); setOtp('') }}
+                className="mt-4 w-full text-sm text-muted-foreground hover:text-foreground transition text-center"
+              >
+                ← Use a different email or mobile
+              </button>
+            </>
+          )}
         </div>
-      </header>
-
-      <main className="w-full mx-auto px-4 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-foreground mb-4 text-balance">
-            Connect with Your Campus Community
-          </h2>
-          <p className="text-xl text-muted-foreground mb-8 text-balance">
-            Share messages with classmates, post on their walls, and build meaningful connections within your institution.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Link href="/signup">
-              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg">
-                Get Started
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button size="sm" variant="outline" className="border-border text-foreground hover:bg-secondary px-8 py-6 text-lg">
-                Login
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        {/* Features */}
-        <div className="grid grid-cols md:grid-cols-3 gap-8 mt-20">
-          <div className="bg-card rounded-lg border-t-2 border-l-2 shadow-sm p-8 transition delay-150 duration-300 ease-in-out hover:-translate-y-1 hover:scale-90">
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-lg flex items-center justify-center mb-4 text-xl">
-              💬
-            </div>
-            <h3 className="text-lg font-bold text-foreground mb-2">Post on Walls</h3>
-            <p className="text-muted-foreground">Write up to 50 words on classmates&apos; walls to share your thoughts and messages.</p>
-          </div>
-
-          <div className="bg-card rounded-lg border-t-2 border-l-2 shadow-sm p-8 transition delay-150 duration-300 ease-in-out hover:-translate-y-1 hover:scale-90">
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-lg flex items-center justify-center mb-4 text-xl">
-              @
-            </div>
-            <h3 className="text-lg font-bold text-foreground mb-2">Mention Friends</h3>
-            <p className="text-muted-foreground">Tag other students in your posts using @mentions to start conversations.</p>
-          </div>
-
-          <div className="bg-card rounded-lg border-t-2 border-l-2 shadow-sm p-8 transition delay-150 duration-300 ease-in-out hover:-translate-y-1 hover:scale-90">
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-lg flex items-center justify-center mb-4 text-xl">
-              👥
-            </div>
-            <h3 className="text-lg font-bold text-foreground mb-2">Discover Students</h3>
-            <p className="text-muted-foreground">Search and discover new friends in your institution to expand your network.</p>
-          </div>
-        </div>
-      </main>
-
-      <footer className="border-t border-border bg-card mt-20">
-        <div className="max-w-6xl mx-auto px-4 py-8 text-center text-muted-foreground text-sm">
-          <p>&copy; 2026 Campus Connect. A student-focused social network.</p>
-        </div>
-      </footer>
+      </div>
     </div>
-  );
+  )
 }

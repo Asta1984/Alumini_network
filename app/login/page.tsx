@@ -1,107 +1,156 @@
-'use client';
+// app/login/page.tsx
+// 2-step OTP login: identifier → OTP entry
+// Uses Zustand auth store
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { useAuth } from '@/lib/auth-context';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import Link from 'next/link';
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useAuthStore } from '@/store/auth.store'
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { login } = useAuth();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const router = useRouter()
+  const { loginStep, maskedEmail, requestOtp, verifyOtp, resetLoginFlow } = useAuthStore()
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  const [identifier, setIdentifier] = useState('')
+  const [otp, setOtp] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    if (!formData.email || !formData.password) {
-      setError('Email and password are required');
-      setLoading(false);
-      return;
+  const handleRequestOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!identifier.trim()) {
+      setError('Email or mobile number is required')
+      return
     }
-
+    setLoading(true)
     try {
-      await login(formData.email, formData.password);
-      router.push('/dashboard');
+      await requestOtp(identifier.trim())
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : 'Failed to send OTP')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!otp.trim()) {
+      setError('Please enter the OTP')
+      return
+    }
+    setLoading(true)
+    try {
+      await verifyOtp(otp.trim())
+      router.push('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid OTP')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="bg-card rounded-lg shadow-lg border border-border p-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome Back</h1>
-          <p className="text-muted-foreground mb-8">Sign in to your Campus Connect account</p>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
-              {error}
-            </div>
+          {/* Logo / Title */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-foreground">Surabhi</h1>
+            <p className="text-muted-foreground mt-1">Alumni Memory Book</p>
+          </div>
+
+          {loginStep === 'identifier' ? (
+            <>
+              <h2 className="text-xl font-semibold text-foreground mb-1">Sign in</h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                Enter your registered email or mobile number
+              </p>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleRequestOtp} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Email or Mobile
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="you@institution.edu or 9876543210"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    disabled={loading}
+                    autoFocus
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  {loading ? 'Sending OTP...' : 'Send OTP'}
+                </Button>
+              </form>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-semibold text-foreground mb-1">Enter OTP</h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                A 6-digit OTP was sent to <span className="font-medium text-foreground">{maskedEmail}</span>
+              </p>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    OTP
+                  </label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="483920"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                    disabled={loading}
+                    autoFocus
+                    className="tracking-widest text-center text-xl"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  {loading ? 'Verifying...' : 'Verify OTP'}
+                </Button>
+              </form>
+
+              <button
+                onClick={() => { resetLoginFlow(); setError(''); setOtp('') }}
+                className="mt-4 w-full text-sm text-muted-foreground hover:text-foreground transition text-center"
+              >
+                ← Use a different email or mobile
+              </button>
+            </>
           )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Email
-              </label>
-              <Input
-                type="email"
-                name="email"
-                placeholder="you@institution.edu"
-                value={formData.email}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Password
-              </label>
-              <Input
-                type="password"
-                name="password"
-                placeholder="••••••"
-                value={formData.password}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </div>
-
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </Button>
-          </form>
-
-          <p className="text-center text-muted-foreground mt-6">
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className="text-primary hover:underline font-medium">
-              Create one
-            </Link>
-          </p>
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,156 +1,118 @@
-// app/login/page.tsx
-// 2-step OTP login: identifier → OTP entry
-// Uses Zustand auth store
-
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { useAuthStore } from '@/store/auth.store'
+import { BookOpen, Settings } from 'lucide-react'
 
-export default function LoginPage() {
-  const router = useRouter()
-  const { loginStep, maskedEmail, requestOtp, verifyOtp, resetLoginFlow } = useAuthStore()
-
-  const [identifier, setIdentifier] = useState('')
-  const [otp, setOtp] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const handleRequestOtp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (!identifier.trim()) {
-      setError('Email or mobile number is required')
-      return
-    }
-    setLoading(true)
-    try {
-      await requestOtp(identifier.trim())
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send OTP')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (!otp.trim()) {
-      setError('Please enter the OTP')
-      return
-    }
-    setLoading(true)
-    try {
-      await verifyOtp(otp.trim())
-      router.push('/dashboard')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid OTP')
-    } finally {
-      setLoading(false)
-    }
-  }
-
+export default function LandingPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-card rounded-lg shadow-lg border border-border p-8">
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Header */}
+      <header className="border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-8 h-8 text-primary" />
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Surabhi</h1>
+                <p className="text-sm text-muted-foreground">Alumni Memory Book</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link href="/login">
+                <Button variant="outline">Student Login</Button>
+              </Link>
+              <Link href="/admin/login">
+                <Button className="bg-primary hover:bg-primary/90">Admin Panel</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
 
-          {/* Logo / Title */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Surabhi</h1>
-            <p className="text-muted-foreground mt-1">Alumni Memory Book</p>
+      {/* Hero Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="text-center mb-16">
+          <h2 className="text-5xl sm:text-6xl font-bold text-foreground mb-6 text-balance">
+            Preserve Your Legacy
+          </h2>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8 text-balance">
+            Create lasting memories with your batchmates. Share stories, wisdom, and moments that define your journey at Surabhi.
+          </p>
+        </div>
+
+        {/* Portal Cards */}
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {/* Student Portal Card */}
+          <div className="group rounded-lg border border-border bg-card p-8 hover:border-primary hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center gap-3 mb-4">
+              <BookOpen className="w-6 h-6 text-primary" />
+              <h3 className="text-2xl font-semibold text-foreground">Alumni Portal</h3>
+            </div>
+            <p className="text-muted-foreground mb-6">
+              Write memories, connect with batchmates, and explore the stories of your peers. Your legacy starts here.
+            </p>
+            <ul className="space-y-2 mb-8 text-sm text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-1">→</span>
+                <span>Write and share your memories</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-1">→</span>
+                <span>View AI-generated summaries</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-1">→</span>
+                <span>Connect with your batch</span>
+              </li>
+            </ul>
+            <Link href="/login" className="w-full block">
+              <Button className="w-full bg-primary hover:bg-primary/90">
+                Enter Alumni Portal
+              </Button>
+            </Link>
           </div>
 
-          {loginStep === 'identifier' ? (
-            <>
-              <h2 className="text-xl font-semibold text-foreground mb-1">Sign in</h2>
-              <p className="text-sm text-muted-foreground mb-6">
-                Enter your registered email or mobile number
-              </p>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4 text-sm">
-                  {error}
-                </div>
-              )}
-
-              <form onSubmit={handleRequestOtp} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Email or Mobile
-                  </label>
-                  <Input
-                    type="text"
-                    placeholder="you@institution.edu or 9876543210"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    disabled={loading}
-                    autoFocus
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                  {loading ? 'Sending OTP...' : 'Send OTP'}
-                </Button>
-              </form>
-            </>
-          ) : (
-            <>
-              <h2 className="text-xl font-semibold text-foreground mb-1">Enter OTP</h2>
-              <p className="text-sm text-muted-foreground mb-6">
-                A 6-digit OTP was sent to <span className="font-medium text-foreground">{maskedEmail}</span>
-              </p>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4 text-sm">
-                  {error}
-                </div>
-              )}
-
-              <form onSubmit={handleVerifyOtp} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    OTP
-                  </label>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="483920"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    disabled={loading}
-                    autoFocus
-                    className="tracking-widest text-center text-xl"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                  {loading ? 'Verifying...' : 'Verify OTP'}
-                </Button>
-              </form>
-
-              <button
-                onClick={() => { resetLoginFlow(); setError(''); setOtp('') }}
-                className="mt-4 w-full text-sm text-muted-foreground hover:text-foreground transition text-center"
-              >
-                ← Use a different email or mobile
-              </button>
-            </>
-          )}
+          {/* Admin Portal Card */}
+          <div className="group rounded-lg border border-border bg-card p-8 hover:border-primary hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center gap-3 mb-4">
+              <Settings className="w-6 h-6 text-primary" />
+              <h3 className="text-2xl font-semibold text-foreground">Admin Panel</h3>
+            </div>
+            <p className="text-muted-foreground mb-6">
+              Manage the platform, moderate submissions, and ensure quality of the memory book experience.
+            </p>
+            <ul className="space-y-2 mb-8 text-sm text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-1">→</span>
+                <span>Manage student profiles</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-1">→</span>
+                <span>Review submissions</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-1">→</span>
+                <span>Generate onboarding links</span>
+              </li>
+            </ul>
+            <Link href="/admin/login" className="w-full block">
+              <Button variant="outline" className="w-full">
+                Access Admin Panel
+              </Button>
+            </Link>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border mt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <p className="text-center text-sm text-muted-foreground">
+            Surabhi Alumni Memory Book © 2024. Preserving memories, one story at a time.
+          </p>
+        </div>
+      </footer>
     </div>
   )
 }

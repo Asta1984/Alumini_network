@@ -14,6 +14,7 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
+    "db:test-student": "tsx prisma/seed-test-student.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

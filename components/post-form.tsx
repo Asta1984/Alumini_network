@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAuth } from '@/lib/auth-context';
 import crypto from 'crypto';
 
 interface UserSuggestion {
@@ -18,7 +17,6 @@ interface PostFormProps {
 }
 
 export default function PostForm({ targetUserId, onSuccess }: PostFormProps) {
-  const { user } = useAuth();
   const [content, setContent] = useState('');
   const [taggedUsers, setTaggedUsers] = useState<string[]>([]);
   const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);

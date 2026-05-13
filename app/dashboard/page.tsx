@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/lib/auth-context';
+import { useAuthStore } from '@/store/auth.store';
 import { ProtectedRoute } from '@/lib/protected-route';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -8,7 +8,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuthStore();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -31,7 +31,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <p className="font-medium text-foreground">{user?.fullName}</p>
-                <p className="text-sm text-muted-foreground">@{user?.username}</p>
+                <p className="text-sm text-muted-foreground">@{user?.fullName}</p>
               </div>
               <Button
                 onClick={handleLogout}
@@ -65,7 +65,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-card rounded-lg border border-border shadow-sm p-4">
                   <p className="text-sm text-muted-foreground">Your Profile</p>
-                  <p className="text-2xl font-bold text-foreground">@{user?.username}</p>
+                  <p className="text-2xl font-bold text-foreground">@{user?.fullName}</p>
                 </div>
                 <div className="bg-card rounded-lg border border-border shadow-sm p-4">
                   <p className="text-sm text-muted-foreground">Member Since</p>

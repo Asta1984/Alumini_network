@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation'
 import { useAdminStore } from '@/store/admin.store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { MessagesTab } from '@/components/admin/messages-tab'
+import { SummariesTab } from '@/components/admin/summaries-tab'
+import { SettingsTab } from '@/components/admin/settings-tab'
 
 interface Student {
   id: string
@@ -26,7 +29,7 @@ interface Pagination {
   pages: number
 }
 
-type Tab = 'students' | 'import'
+type Tab = 'students' | 'messages' | 'summaries' | 'settings' | 'import'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -214,7 +217,7 @@ export default function AdminDashboard() {
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
-          {(['students', 'import'] as Tab[]).map(t => (
+          {(['students', 'messages', 'summaries', 'settings', 'import'] as Tab[]).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -224,7 +227,7 @@ export default function AdminDashboard() {
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
               }`}
             >
-              {t === 'students' ? '👥 Students' : '📤 Import CSV'}
+              {t === 'students' ? '👥 Students' : t === 'messages' ? '💬 Messages' : t === 'summaries' ? '📝 Summaries' : t === 'settings' ? '⚙️ Settings' : '📤 Import CSV'}
             </button>
           ))}
         </nav>
@@ -402,6 +405,39 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── Messages Tab ──────────────────────────────────────────────────── */}
+        {tab === 'messages' && (
+          <div>
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold">Message Review</h1>
+              <p className="text-zinc-500 text-sm mt-0.5">View and moderate messages received by students</p>
+            </div>
+            <MessagesTab students={students} />
+          </div>
+        )}
+
+        {/* ── Summaries Tab ─────────────────────────────────────────────────── */}
+        {tab === 'summaries' && (
+          <div>
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold">Summary Approval</h1>
+              <p className="text-zinc-500 text-sm mt-0.5">Review and approve AI-generated memory summaries</p>
+            </div>
+            <SummariesTab />
+          </div>
+        )}
+
+        {/* ── Settings Tab ──────────────────────────────────────────────────── */}
+        {tab === 'settings' && (
+          <div>
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold">Settings</h1>
+              <p className="text-zinc-500 text-sm mt-0.5">Manage message windows and submission limits</p>
+            </div>
+            <SettingsTab />
           </div>
         )}
 

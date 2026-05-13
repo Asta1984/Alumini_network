@@ -4,13 +4,19 @@ import { useAuthStore } from '@/store/auth.store';
 import { ProtectedRoute } from '@/lib/protected-route';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    if (user && !user.isProfileCompleted) {
+      router.push('/onboarding');
+    }
+  }, [user, router]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -79,6 +85,14 @@ export default function DashboardPage() {
               <div className="bg-card rounded-lg border border-border shadow-sm p-6">
                 <h3 className="text-lg font-bold text-foreground mb-4">Quick Actions</h3>
                 <div className="space-y-2">
+                  <Link href="/memories" className="block">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start border-border text-foreground hover:bg-secondary"
+                    >
+                      Write a Memory
+                    </Button>
+                  </Link>
                   <Link href={`/profile/${user?.userId}`} className="block">
                     <Button
                       variant="ghost"

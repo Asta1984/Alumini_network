@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
           messageText: true,
           characterCount: true,
           createdAt: true,
+          status: true,
           sender: {
             select: {
               id: true,
@@ -54,6 +55,7 @@ export async function GET(request: NextRequest) {
         text: m.messageText,
         characterCount: m.characterCount,
         createdAt: m.createdAt,
+        status: m.status,
       })),
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     })

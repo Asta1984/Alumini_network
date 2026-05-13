@@ -1,91 +1,55 @@
 'use client';
 
-import { useAuth } from '@/lib/auth-context';
+import { useAuthStore } from '@/store/auth.store';
 import { ProtectedRoute } from '@/lib/protected-route';
 import { Button } from '@/components/ui/button';
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import PostForm from '@/components/post-form';
-import PostCard from '@/components/post-card';
 
-interface User {
+interface AlumniProfile {
   userId: string;
-  username: string;
   fullName: string;
-  email: string;
-  createdAt: string;
-}
-
-interface Post {
-  postId: string;
-  authorId: string;
-  author: {
-    username: string;
-    fullName: string;
-  };
-  content: string;
-  taggedUsers: Array<{
-    userId: string;
-    username: string;
-    fullName: string;
+  enrollmentNumber: string;
+  profilePictureUrl: string | null;
+  nickname: string | null;
+  bio: string | null;
+  socialProfiles: Array<{
+    platform: 'LINKEDIN' | 'INSTAGRAM' | 'GITHUB' | 'TWITTER';
+    profileUrl: string;
   }>;
+  aiSummary: string | null;
   createdAt: string;
 }
 
-export default function UserProfilePage() {
+export default function AlumniProfilePage() {
   const params = useParams();
   const userId = params.userId as string;
-  const { user: currentUser } = useAuth();
+  const { user: currentUser } = useAuthStore();
   const router = useRouter();
 
-  const [profileUser, setProfileUser] = useState<User | null>(null);
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [profile, setProfile] = useState<AlumniProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [postsLoading, setPostsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [postCount, setPostCount] = useState(0);
 
   useEffect(() => {
-    fetchUserProfile();
-    fetchWallPosts();
+    fetchAlumniProfile();
   }, [userId]);
 
-  const fetchUserProfile = async () => {
+  const fetchAlumniProfile = async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/users/${userId}`);
       if (!response.ok) {
-        throw new Error('User not found');
+        throw new Error('Profile not found');
       }
       const data = await response.json();
-      setProfileUser(data);
+      setProfile(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load profile');
     } finally {
       setLoading(false);
     }
-  };
-
-  const fetchWallPosts = async () => {
-    try {
-      setPostsLoading(true);
-      const response = await fetch(`/api/walls/${userId}`);
-      if (!response.ok) {
-        throw new Error('Failed to load posts');
-      }
-      const data = await response.json();
-      setPosts(data.posts || []);
-      setPostCount(data.pagination?.total || 0);
-    } catch (err) {
-      console.error('[v0] Failed to load posts:', err);
-    } finally {
-      setPostsLoading(false);
-    }
-  };
-
-  const handlePostSuccess = () => {
-    fetchWallPosts();
   };
 
   if (loading) {
@@ -101,7 +65,7 @@ export default function UserProfilePage() {
     );
   }
 
-  if (error || !profileUser) {
+  if (error || !profile) {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background">
@@ -116,7 +80,7 @@ export default function UserProfilePage() {
           </header>
           <main className="max-w-6xl mx-auto px-4 py-8">
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-              {error}
+              {error || 'Profile not found'}
             </div>
           </main>
         </div>
@@ -125,69 +89,126 @@ export default function UserProfilePage() {
   }
 
   const isOwnProfile = currentUser?.userId === userId;
+  const platformIcons: Record<string, string> = {
+    LINKEDIN: '🔗',
+    INSTAGRAM: '📸',
+    GITHUB: '💻',
+    TWITTER: '𝕏',
+  };
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
-        {/* Header */}
         <header className="border-b border-border bg-card">
           <div className="max-w-6xl mx-auto px-4 py-4">
             <Link href="/dashboard">
-              <Button variant="ghost" className="text-foreground hover:bg-secondary mb-4">
+              <Button variant="ghost" className="text-foreground hover:bg-secondary">
                 ← Back to Dashboard
               </Button>
             </Link>
           </div>
         </header>
 
-        <main className="max-w-6xl mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Profile Section */}
-            <div className="md:col-span-1">
-              <div className="bg-card rounded-lg border border-border shadow-sm p-6">
-                <div className="w-16 h-16 bg-linear-to-br from-primary to-secondary rounded-full mx-auto mb-4 flex items-center justify-center">
-                  <span className="text-white text-xl font-bold">
-                    {profileUser.fullName.charAt(0).toUpperCase()}
-                  </span>
+        <main className="max-w-6xl mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Sidebar: Profile Card */}
+            <div className="lg:col-span-1">
+              <div className="bg-card rounded-lg border border-border shadow-sm p-6 sticky top-6">
+                {/* Avatar */}
+                <div className="w-20 h-20 bg-linear-to-br from-primary to-primary/50 rounded-full mx-auto mb-4 flex items-center justify-center shrink-0">
+                  {profile.profilePictureUrl ? (
+                    <img
+                      src={profile.profilePictureUrl}
+                      alt={profile.fullName}
+                      className="w-20 h-20 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white text-2xl font-bold">
+                      {profile.fullName.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
-                <h1 className="text-2xl font-bold text-foreground text-center mb-1">{profileUser.fullName}</h1>
-                <p className="text-center text-primary font-medium mb-4">@{profileUser.username}</p>
-                <div className="border-t border-border pt-4 mt-4">
-                  <div className="text-center mb-4">
-                    <p className="text-sm text-muted-foreground">Posts on Wall</p>
-                    <p className="text-2xl font-bold text-foreground">{postCount}</p>
+
+                {/* Name & Details */}
+                <h1 className="text-2xl font-bold text-foreground text-center mb-1">
+                  {profile.fullName}
+                </h1>
+                {profile.nickname && (
+                  <p className="text-center text-primary font-medium mb-2 text-sm">
+                    {profile.nickname}
+                  </p>
+                )}
+                <p className="text-center text-xs text-muted-foreground mb-4">
+                  Enrollment: {profile.enrollmentNumber}
+                </p>
+
+                {/* Bio */}
+                {profile.bio && (
+                  <div className="border-t border-border pt-4 mb-4">
+                    <p className="text-sm text-muted-foreground text-center">{profile.bio}</p>
                   </div>
-                </div>
+                )}
+
+                {/* Social Profiles */}
+                {profile.socialProfiles.length > 0 && (
+                  <div className="border-t border-border pt-4">
+                    <h3 className="text-xs font-semibold text-foreground uppercase mb-3">
+                      Connect
+                    </h3>
+                    <div className="space-y-2">
+                      {profile.socialProfiles.map((social) => (
+                        <a
+                          key={social.platform}
+                          href={social.profileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 p-2 rounded hover:bg-secondary transition text-sm text-foreground hover:text-primary"
+                        >
+                          <span>{platformIcons[social.platform]}</span>
+                          <span className="truncate capitalize">
+                            {social.platform.toLowerCase()}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Wall Section */}
-            <div className="md:col-span-2">
-              {!isOwnProfile && (
+            {/* Main: Memory Card */}
+            <div className="lg:col-span-2">
+              {/* Memory Card */}
+              <div className="bg-card rounded-lg border border-border shadow-sm p-8">
                 <div className="mb-6">
-                  <PostForm targetUserId={userId} onSuccess={handlePostSuccess} />
+                  <h2 className="text-2xl font-bold text-foreground mb-2">Memory</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {isOwnProfile
+                      ? 'Your approved alumni memory summary'
+                      : `${profile.fullName}'s alumni memory summary`}
+                  </p>
                 </div>
-              )}
 
-              <div>
-                <h2 className="text-xl font-bold text-foreground mb-4">
-                  {isOwnProfile ? 'Your Wall' : `${profileUser.fullName}'s Wall`}
-                </h2>
-
-                {postsLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                    <p className="text-muted-foreground">Loading posts...</p>
-                  </div>
-                ) : posts.length === 0 ? (
-                  <div className="bg-card rounded-lg border border-border shadow-sm p-8 text-center">
-                    <p className="text-muted-foreground">No posts yet on this wall</p>
+                {profile.aiSummary ? (
+                  <div className="bg-secondary/30 rounded-lg p-6 border border-border/50">
+                    <p className="text-foreground leading-relaxed whitespace-pre-wrap">
+                      {profile.aiSummary}
+                    </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {posts.map((post) => (
-                      <PostCard key={post.postId} post={post} />
-                    ))}
+                  <div className="bg-secondary/20 rounded-lg p-8 text-center border border-border/50">
+                    <p className="text-muted-foreground">
+                      {isOwnProfile
+                        ? 'No approved memory yet. Write your memories and wait for admin approval.'
+                        : 'No memory shared yet.'}
+                    </p>
+                    {isOwnProfile && (
+                      <Link href="/memories">
+                        <Button className="mt-4 bg-primary hover:bg-primary/90">
+                          Write Your Memory
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>

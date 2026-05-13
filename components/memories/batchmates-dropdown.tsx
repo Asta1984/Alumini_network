@@ -1,15 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Loader2, Search, X } from 'lucide-react'
+import { useAsyncSearch } from '@/lib/hooks/useDebounce'
 
 interface Student {
   id: string
   name: string
   enrollment: string
-  label: string
 }
 
 interface BatchmatesDropdownProps {
@@ -21,34 +21,24 @@ interface BatchmatesDropdownProps {
 export function BatchmatesDropdown({ onSelect, selectedId, disabled }: BatchmatesDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const [students, setStudents] = useState<Student[]>([])
-  const [loading, setLoading] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
 
-  useEffect(() => {
-    const loadStudents = async () => {
-      if (!search.trim()) {
-        setStudents([])
-        return
-      }
-
-      setLoading(true)
-      try {
-        const res = await fetch(`/api/students/list?search=${encodeURIComponent(search)}`)
-        if (res.ok) {
-          const data = await res.json()
-          setStudents(data.students)
-        }
-      } catch (error) {
-        console.error('Failed to load students:', error)
-      } finally {
-        setLoading(false)
-      }
+  // Memoize the search function to prevent infinite loops
+  const searchFn = useCallback(async (query: string): Promise<Student[]> => {
+    const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`)
+    if (res.ok) {
+      const data = await res.json()
+      return (data.users || []).map((u: any) => ({
+        id: u.userId,
+        name: u.fullName,
+        enrollment: u.enrollmentNumber,
+      }))
     }
+    return []
+  }, [])
 
-    const timer = setTimeout(loadStudents, 300)
-    return () => clearTimeout(timer)
-  }, [search])
+  // Use async search hook with 400ms debounce
+  const { results, isLoading } = useAsyncSearch(search, searchFn, 400)
 
   const handleSelect = (student: Student) => {
     setSelectedStudent(student)
@@ -70,7 +60,7 @@ export function BatchmatesDropdown({ onSelect, selectedId, disabled }: Batchmate
         
         {selectedStudent ? (
           <div className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg bg-secondary">
-            <span className="flex-1 text-sm text-foreground">{selectedStudent.label}</span>
+            <span className="flex-1 text-sm text-foreground">{selectedStudent.name}</span>
             <Button
               size="sm"
               variant="ghost"
@@ -83,13 +73,14 @@ export function BatchmatesDropdown({ onSelect, selectedId, disabled }: Batchmate
           </div>
         ) : (
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or enrollment..."
+              type="text"
+              placeholder="Search for a batchmate..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value)
-                if (!isOpen) setIsOpen(true)
+                setIsOpen(true)
               }}
               onFocus={() => setIsOpen(true)}
               disabled={disabled}
@@ -98,27 +89,27 @@ export function BatchmatesDropdown({ onSelect, selectedId, disabled }: Batchmate
           </div>
         )}
 
-        {isOpen && !selectedStudent && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50">
-            {loading ? (
-              <div className="flex items-center justify-center gap-2 px-4 py-3 text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Loading batchmates...
+        {isOpen && !selectedStudent && search && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+            {isLoading ? (
+              <div className="p-4 flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                <span className="text-sm text-muted-foreground">Loading...</span>
               </div>
-            ) : students.length === 0 && search ? (
-              <div className="px-4 py-3 text-sm text-muted-foreground">
+            ) : results.length === 0 ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
                 No batchmates found
               </div>
             ) : (
-              <div className="max-h-48 overflow-y-auto">
-                {students.map((student) => (
+              <div className="divide-y divide-border">
+                {results.map((student) => (
                   <button
                     key={student.id}
                     onClick={() => handleSelect(student)}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-secondary transition text-foreground"
+                    className="w-full px-4 py-3 text-left hover:bg-secondary transition text-foreground"
                   >
-                    <div className="font-medium">{student.name}</div>
-                    <div className="text-xs text-muted-foreground">{student.enrollment}</div>
+                    <p className="font-medium text-sm">{student.name}</p>
+                    <p className="text-xs text-muted-foreground">{student.enrollment}</p>
                   </button>
                 ))}
               </div>

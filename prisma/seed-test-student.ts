@@ -9,13 +9,13 @@ const prisma = new PrismaClient({adapter: new PrismaPg({ connectionString: proce
 async function main() {
   try {
     const testStudent = await prisma.user.upsert({
-      where: { enrollmentNumber: '0101AU191049' },
+      where: { enrollmentNumber: '0101AU191001' },
       update: {},
       create: {
-        enrollmentNumber: '0101AU191050',
-        fullName: 'Salil',
-        email: 'mandalsalil75@gmail.com',
-        mobile: '7067456789',
+        enrollmentNumber: '0101AU191001',
+        fullName: 'Sumit Kumar',
+        email: '9bankitamandal@gmail.com',
+        mobile: '9876543210',
         isProfileCompleted: false,
         nickname: null,
         bio: null,

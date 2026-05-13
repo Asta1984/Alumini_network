@@ -1,139 +1,187 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/auth-context';
-import { ProtectedRoute } from '@/lib/protected-route';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import Link from 'next/link';
+import { useState, useCallback } from 'react'
+import { useAuthStore } from '@/store/auth.store'
+import { ProtectedRoute } from '@/lib/protected-route'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useAsyncSearch } from '@/lib/hooks/useDebounce'
+import Link from 'next/link'
 
 interface UserResult {
-  userId: string;
-  username: string;
-  fullName: string;
+  userId: string
+  fullName: string
+  enrollmentNumber: string
+  profilePictureUrl: string | null
+  nickname: string | null
+  linkedInUrl: string | null
 }
 
 export default function SearchPage() {
-  const { user: currentUser } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState<UserResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const { user: currentUser } = useAuthStore()
+  const [searchQuery, setSearchQuery] = useState('')
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
-      setResults([]);
-      setSearched(false);
-      return;
+  // Memoize the search function to prevent infinite loops
+  const searchFn = useCallback(async (query: string): Promise<UserResult[]> => {
+    const response = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`)
+    if (!response.ok) {
+      throw new Error('Search failed')
     }
+    const data = await response.json()
+    return data.users || []
+  }, [])
 
-    setLoading(true);
-    setSearched(true);
-
-    try {
-      const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`);
-      if (response.ok) {
-        const data = await response.json();
-        setResults(data.users || []);
-      } else {
-        setResults([]);
-      }
-    } catch (err) {
-      console.error('[v0] Search error:', err);
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use async search hook with 400ms debounce
+  const { results, isLoading, error, hasSearched } = useAsyncSearch(
+    searchQuery,
+    searchFn,
+    400,
+  )
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
         {/* Header */}
         <header className="border-b border-border bg-card">
-          <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-4 py-4">
             <Link href="/dashboard">
-              <Button variant="ghost" className="text-foreground hover:bg-secondary">
+              <Button variant="ghost" className="text-foreground hover:bg-secondary mb-4">
                 ← Back to Dashboard
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold text-foreground">Campus Connect</h1>
-            <div className="text-right">
-              <p className="font-medium text-foreground">{currentUser?.fullName}</p>
-              <p className="text-sm text-muted-foreground">@{currentUser?.username}</p>
-            </div>
+            <h1 className="text-2xl font-bold text-foreground">Find Alumni</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Search and connect with your batchmates
+            </p>
           </div>
         </header>
 
         <main className="max-w-6xl mx-auto px-4 py-8">
           <div className="max-w-2xl mx-auto">
             <div className="mb-8">
-              <h2 className="text-3xl font-bold text-foreground mb-2">Find Students</h2>
-              <p className="text-muted-foreground">Search for classmates and visit their profiles</p>
+              <h2 className="text-3xl font-bold text-foreground mb-2">Discover Alumni</h2>
+              <p className="text-muted-foreground">
+                Search by name, enrollment number, or nickname to find your batchmates
+              </p>
             </div>
 
-            <form onSubmit={handleSearch} className="mb-8">
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  placeholder="Search by name or username..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1"
-                />
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                  {loading ? 'Searching...' : 'Search'}
-                </Button>
-              </div>
-            </form>
+            {/* Search Input */}
+            <div className="mb-8">
+              <Input
+                type="text"
+                placeholder="Search by name, enrollment, or nickname..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                Results update automatically as you type
+              </p>
+            </div>
 
-            {searched && (
-              <div>
-                {loading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                    <p className="text-muted-foreground">Searching...</p>
-                  </div>
-                ) : results.length === 0 ? (
-                  <div className="bg-card rounded-lg border border-border shadow-sm p-8 text-center">
-                    <p className="text-muted-foreground">No students found matching &quot;{searchQuery}&quot;</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Found {results.length} student{results.length !== 1 ? 's' : ''}
-                    </p>
-                    {results.map((result) => (
-                      <Link key={result.userId} href={`/profile/${result.userId}`}>
-                        <div className="bg-card rounded-lg border border-border shadow-sm p-4 hover:border-primary hover:shadow-md transition">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-semibold text-foreground">{result.fullName}</p>
-                              <p className="text-sm text-primary">@{result.username}</p>
+            {/* Results Section */}
+            <div>
+              {isLoading && (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
+                  <p className="text-muted-foreground">Searching...</p>
+                </div>
+              )}
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                  {error}
+                </div>
+              )}
+
+              {!isLoading && hasSearched && results.length === 0 && (
+                <div className="bg-card rounded-lg border border-border shadow-sm p-12 text-center">
+                  <p className="text-muted-foreground text-lg">
+                    No alumni found matching &quot;{searchQuery}&quot;
+                  </p>
+                  <p className="text-muted-foreground text-sm mt-2">
+                    Try searching with a different name or enrollment number
+                  </p>
+                </div>
+              )}
+
+              {!isLoading && !hasSearched && searchQuery === '' && (
+                <div className="bg-secondary/20 rounded-lg border border-border shadow-sm p-12 text-center">
+                  <p className="text-muted-foreground text-lg">
+                    Start typing to search for alumni
+                  </p>
+                </div>
+              )}
+
+              {!isLoading && results.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Found {results.length} alumni
+                  </p>
+                  {results.map((result) => (
+                    <Link key={result.userId} href={`/profile/${result.userId}`}>
+                      <div className="bg-card rounded-lg border border-border shadow-sm p-4 hover:border-primary hover:shadow-md transition cursor-pointer">
+                        <div className="flex items-center gap-4">
+                          {/* Avatar */}
+                          <div className="shrink-0">
+                            <div className="w-12 h-12 bg-linear-to-br from-primary to-primary/50 rounded-full flex items-center justify-center">
+                              {result.profilePictureUrl ? (
+                                <img
+                                  src={result.profilePictureUrl}
+                                  alt={result.fullName}
+                                  className="w-12 h-12 rounded-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-white font-bold">
+                                  {result.fullName.charAt(0).toUpperCase()}
+                                </span>
+                              )}
                             </div>
-                            <Button
-                              variant="outline"
-                              className="border-border text-foreground hover:bg-secondary"
-                              asChild
-                            >
-                              <span>Visit Profile</span>
-                            </Button>
                           </div>
+
+                          {/* Info */}
+                          <div className="flex-1">
+                            <p className="font-semibold text-foreground">{result.fullName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {result.enrollmentNumber}
+                            </p>
+                            {result.nickname && (
+                              <p className="text-sm text-primary font-medium">{result.nickname}</p>
+                            )}
+                          </div>
+
+                          {/* LinkedIn Link */}
+                          {result.linkedInUrl && (
+                            <a
+                              href={result.linkedInUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 transition"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span className="text-sm font-medium">LinkedIn</span>
+                            </a>
+                          )}
+
+                          {/* Visit Profile Button */}
+                          <Button
+                            variant="outline"
+                            className="border-border text-foreground hover:bg-secondary"
+                            asChild
+                          >
+                            <span>Visit</span>
+                          </Button>
                         </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </main>
       </div>
     </ProtectedRoute>
-  );
+  )
 }

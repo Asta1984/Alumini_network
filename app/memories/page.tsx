@@ -70,12 +70,13 @@ export default function MemoriesPage() {
     const loadData = async () => {
       try {
         const [windowRes, messagesRes] = await Promise.all([
-          fetch('/api/admin/message-window'),
+          fetch('/api/message-window'),
           fetch('/api/messages/sent'),
         ])
 
         if (windowRes.ok) {
           const windowData = await windowRes.json()
+          console.log('[v0] Window data loaded:', windowData)
           setWindow({
             isActive: windowData.isActive,
             startDate: windowData.startDate,
@@ -93,7 +94,7 @@ export default function MemoriesPage() {
           setSentMessages(messagesData.messages || [])
         }
       } catch (error) {
-        console.error('Failed to load data:', error)
+        console.error('[v0] Failed to load data:', error)
         toast.error('Failed to load memory data')
       }
     }
@@ -171,7 +172,9 @@ export default function MemoriesPage() {
         : 'open'
     : 'closed'
 
-  const isWindowOpen = window?.isActive && windowStatus === 'open'
+  const isWindowOpen = windowStatus === 'open' && window?.isActive
+  
+  console.log('[v0] Window status:', { windowStatus, isWindowOpen, window })
 
   if (authLoading || !user) {
     return (
@@ -225,7 +228,7 @@ export default function MemoriesPage() {
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-foreground">Your Memory</label>
                   <Textarea
-                    placeholder="Write your heartfelt memory here... (400-600 characters)"
+                    placeholder="Write your heartfelt memory here..."
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     disabled={!isWindowOpen || isSubmitting}
@@ -265,9 +268,17 @@ export default function MemoriesPage() {
                 </Button>
 
                 {!isWindowOpen && (
-                  <p className="text-sm text-muted-foreground text-center bg-secondary rounded-lg px-4 py-2">
-                    Form is disabled. The memory window is currently {windowStatus}.
-                  </p>
+                  <div className="text-sm text-center bg-secondary rounded-lg px-4 py-2">
+                    {window?.isActive === false ? (
+                      <p className="text-muted-foreground">Memory window is not yet active. Please check back later.</p>
+                    ) : windowStatus === 'upcoming' ? (
+                      <p className="text-muted-foreground">Memory window opens on {window?.startDate ? new Date(window.startDate).toLocaleDateString() : 'TBD'}.</p>
+                    ) : windowStatus === 'closed' ? (
+                      <p className="text-muted-foreground">Memory window has closed. Thank you for your submission.</p>
+                    ) : (
+                      <p className="text-muted-foreground">Memory window is temporarily unavailable.</p>
+                    )}
+                  </div>
                 )}
               </form>
             </div>

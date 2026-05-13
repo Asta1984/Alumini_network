@@ -10,6 +10,13 @@ datasource db {
   provider = "postgresql"
 }
 
+enum MessageStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  MODIFIED
+}
+
 enum AdminRole {
   SUPER_ADMIN
   MODERATOR
@@ -138,17 +145,22 @@ model MessageLimit {
 }
 
 model Message {
-  id             String   @id @default(uuid())
+  id             String        @id @default(uuid())
   senderId       String
   recipientId    String
   messageText    String
+  modifiedText   String?
   characterCount Int
-  createdAt      DateTime @default(now())
+  status         MessageStatus @default(PENDING)
+  approvedById   String?
+  rejectionReason String?
+  approvedAt     DateTime?
+  createdAt      DateTime      @default(now())
 
   sender    User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
   recipient User @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
 
-  @@index([recipientId])
+  @@index([recipientId, status])
   @@index([senderId])
   @@map("messages")
 }

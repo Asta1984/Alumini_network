@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { MessageModal } from './message-modal'
+import { MessageActionModal } from './message-action-modal'
 import { format } from 'date-fns'
+import { AlertCircle, CheckCircle, XCircle, Edit2 } from 'lucide-react'
 
 interface Message {
   id: string
@@ -13,6 +14,7 @@ interface Message {
   text: string
   characterCount: number
   createdAt: Date
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'MODIFIED'
 }
 
 interface Student {
@@ -58,6 +60,21 @@ export function MessagesTab({ students }: MessageTabProps) {
   const handleViewMessage = (message: Message) => {
     setSelectedMessage(message)
     setShowModal(true)
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return <AlertCircle className="w-4 h-4 text-amber-500" />
+      case 'APPROVED':
+        return <CheckCircle className="w-4 h-4 text-green-500" />
+      case 'REJECTED':
+        return <XCircle className="w-4 h-4 text-red-500" />
+      case 'MODIFIED':
+        return <Edit2 className="w-4 h-4 text-blue-500" />
+      default:
+        return null
+    }
   }
 
   return (
@@ -130,11 +147,14 @@ export function MessagesTab({ students }: MessageTabProps) {
                     <div key={msg.id} className="p-4 hover:bg-zinc-800/30 transition">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white">
-                            {msg.senderName}
-                          </p>
+                          <div className="flex items-center gap-2 mb-1">
+                            {getStatusIcon(msg.status)}
+                            <p className="text-sm font-medium text-white">
+                              {msg.senderName}
+                            </p>
+                          </div>
                           <p className="text-xs text-zinc-500 mb-2">
-                            {msg.senderEnrollment} • {format(new Date(msg.createdAt), 'MMM dd, yyyy')}
+                            {msg.senderEnrollment} • {format(new Date(msg.createdAt), 'MMM dd, yyyy')} • {msg.status.toLowerCase()}
                           </p>
                           <p className="text-sm text-zinc-300 line-clamp-2">
                             {msg.text}
@@ -143,14 +163,25 @@ export function MessagesTab({ students }: MessageTabProps) {
                             {msg.characterCount} chars
                           </p>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleViewMessage(msg)}
-                          className="border-zinc-700 text-zinc-400 hover:bg-zinc-800 whitespace-nowrap shrink-0"
-                        >
-                          View Full
-                        </Button>
+                        {msg.status === 'PENDING' && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleViewMessage(msg)}
+                            className="bg-violet-600 hover:bg-violet-700 text-white whitespace-nowrap shrink-0"
+                          >
+                            Review
+                          </Button>
+                        )}
+                        {msg.status !== 'PENDING' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewMessage(msg)}
+                            className="border-zinc-700 text-zinc-400 hover:bg-zinc-800 whitespace-nowrap shrink-0"
+                          >
+                            View
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -194,11 +225,15 @@ export function MessagesTab({ students }: MessageTabProps) {
         </div>
       )}
 
-      {/* Message Modal */}
-      <MessageModal
-        isOpen={showModal}
-        onOpenChange={setShowModal}
+      {/* Message Action Modal */}
+      <MessageActionModal
         message={selectedMessage}
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onActionComplete={() => {
+          setShowModal(false)
+          if (selectedStudent) fetchMessages(selectedStudent.id, pagination.page)
+        }}
       />
     </div>
   )

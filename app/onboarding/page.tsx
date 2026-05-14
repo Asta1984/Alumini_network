@@ -21,6 +21,7 @@ export default function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(false)
 
   const [fullName, setFullName] = useState(user?.fullName || '')
+  const [enrollmentNumber, setEnrollmentNumber] = useState(user?.enrollmentNumber || '')
   const [nickname, setNickname] = useState(user?.nickname || '')
   const [bio, setBio] = useState(user?.bio || '')
   const [linkedin, setLinkedin] = useState('')
@@ -107,9 +108,24 @@ export default function OnboardingPage() {
                 placeholder="Your full name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                disabled={isLoading}
+                disabled={true}
+                className="bg-muted cursor-not-allowed"
               />
-              <p className="text-xs text-muted-foreground mt-1">This is how your peers will see you</p>
+              <p className="text-xs text-muted-foreground mt-1">Prefilled from enrollment data (locked)</p>
+            </div>
+
+            {/* Enrollment Number */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Enrollment Number *</label>
+              <Input
+                type="text"
+                placeholder="Your enrollment number"
+                value={enrollmentNumber}
+                onChange={(e) => setEnrollmentNumber(e.target.value)}
+                disabled={true}
+                className="bg-muted cursor-not-allowed"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Prefilled from enrollment data (locked)</p>
             </div>
 
             {/* Nickname */}

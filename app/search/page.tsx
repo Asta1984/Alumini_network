@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/auth.store'
 import { ProtectedRoute } from '@/lib/protected-route'
@@ -18,42 +18,10 @@ interface UserResult {
   linkedInUrl: string | null
 }
 
-interface CurrentUserProfile extends UserResult {
-  bio?: string | null
-  socialProfiles?: Array<{
-    platform: 'LINKEDIN' | 'INSTAGRAM' | 'GITHUB' | 'TWITTER' | 'PORTFOLIO'
-    profileUrl: string
-  }>
-}
-
 export default function SearchPage() {
   const { user: currentUser } = useAuthStore()
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
-  const [currentUserProfile, setCurrentUserProfile] = useState<CurrentUserProfile | null>(null)
-  const [loadingCurrentUser, setLoadingCurrentUser] = useState(true)
-
-  // Fetch current user's profile
-  useEffect(() => {
-    const fetchCurrentUserProfile = async () => {
-      if (!currentUser?.userId) return
-
-      try {
-        setLoadingCurrentUser(true)
-        const response = await fetch(`/api/users/${currentUser.userId}`)
-        if (response.ok) {
-          const data = await response.json()
-          setCurrentUserProfile(data)
-        }
-      } catch (err) {
-        console.error('Failed to fetch current user profile:', err)
-      } finally {
-        setLoadingCurrentUser(false)
-      }
-    }
-
-    fetchCurrentUserProfile()
-  }, [currentUser?.userId])
 
   // Memoize the search function to prevent infinite loops
   const searchFn = useCallback(async (query: string): Promise<UserResult[]> => {
@@ -62,8 +30,10 @@ export default function SearchPage() {
       throw new Error('Search failed')
     }
     const data = await response.json()
-    return data.users || []
-  }, [])
+    // Filter out current user from results
+    const users = data.users || []
+    return users.filter((user: UserResult) => user.userId !== currentUser?.userId)
+  }, [currentUser?.userId])
 
   // Use async search hook with 400ms debounce
   const { results, isLoading, error, hasSearched } = useAsyncSearch(
@@ -98,59 +68,6 @@ export default function SearchPage() {
                 Search by name, enrollment number, or nickname to find your batchmates
               </p>
             </div>
-
-            {/* Current User Profile Card */}
-            {loadingCurrentUser ? (
-              <div className="mb-8 bg-card rounded-lg border border-primary/20 shadow-sm p-6 animate-pulse">
-                <div className="h-6 bg-secondary rounded mb-2"></div>
-              </div>
-            ) : (
-              currentUserProfile && (
-                <div className="mb-8 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20 shadow-sm p-6">
-                  <div className="flex items-center justify-between gap-6">
-                    {/* Left: Avatar and Info */}
-                    <div className="flex items-center gap-4">
-                      <div className="shrink-0 relative">
-                        <div className="w-14 h-14 bg-linear-to-br from-primary to-primary/50 rounded-full flex items-center justify-center">
-                          {currentUserProfile.profilePictureUrl ? (
-                            <img
-                              src={currentUserProfile.profilePictureUrl}
-                              alt={currentUserProfile.fullName}
-                              className="w-14 h-14 rounded-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-white font-bold">
-                              {currentUserProfile.fullName.charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 bg-primary text-white text-xs font-bold px-2 py-1 rounded-full">
-                          You
-                        </div>
-                      </div>
-
-                      <div className="flex-1">
-                        <p className="font-semibold text-foreground">{currentUserProfile.fullName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {currentUserProfile.enrollmentNumber}
-                        </p>
-                        {currentUserProfile.nickname && (
-                          <p className="text-sm text-primary font-medium">{currentUserProfile.nickname}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Right: View Button */}
-                    <Button
-                      className="bg-primary hover:bg-primary/90 shrink-0"
-                      onClick={() => router.push(`/profile/${currentUserProfile.userId}`)}
-                    >
-                      View Profile
-                    </Button>
-                  </div>
-                </div>
-              )
-            )}
 
             {/* Search Input */}
             <div className="mb-8">
@@ -207,15 +124,10 @@ export default function SearchPage() {
                     Found {results.length} alumni
                   </p>
                   {results.map((result) => {
-                    const isCurrentUser = result.userId === currentUser?.userId
                     return (
                       <div
                         key={result.userId}
-                        className={`rounded-lg border shadow-sm p-4 transition cursor-pointer ${
-                          isCurrentUser
-                            ? 'bg-gradient-to-r from-primary/10 to-primary/5 border-primary/40 hover:border-primary hover:shadow-md'
-                            : 'bg-card border-border hover:border-primary hover:shadow-md'
-                        }`}
+                        className="rounded-lg border border-border shadow-sm p-4 transition cursor-pointer bg-card hover:border-primary hover:shadow-md"
                         onClick={() => router.push(`/profile/${result.userId}`)}
                         role="button"
                         tabIndex={0}
@@ -227,7 +139,7 @@ export default function SearchPage() {
                       >
                         <div className="flex items-center gap-4">
                           {/* Avatar */}
-                          <div className="shrink-0 relative">
+                          <div className="shrink-0">
                             <div className="w-12 h-12 bg-linear-to-br from-primary to-primary/50 rounded-full flex items-center justify-center">
                               {result.profilePictureUrl ? (
                                 <img
@@ -241,23 +153,11 @@ export default function SearchPage() {
                                 </span>
                               )}
                             </div>
-                            {isCurrentUser && (
-                              <div className="absolute -bottom-1 -right-1 bg-primary text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
-                                You
-                              </div>
-                            )}
                           </div>
 
                           {/* Info */}
                           <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold text-foreground">{result.fullName}</p>
-                              {isCurrentUser && (
-                                <span className="text-xs bg-primary/20 text-primary font-medium px-2 py-0.5 rounded">
-                                  You
-                                </span>
-                              )}
-                            </div>
+                            <p className="font-semibold text-foreground">{result.fullName}</p>
                             <p className="text-xs text-muted-foreground">
                               {result.enrollmentNumber}
                             </p>

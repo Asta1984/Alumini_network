@@ -106,8 +106,8 @@ export async function PATCH(request: NextRequest) {
         updatedLimits = await prisma.messageLimit.create({
           data: {
             maxPerUser: body.maxPerUser ?? 100,
-            minCharacters: body.minCharacters ?? 400,
-            maxCharacters: body.maxCharacters ?? 600,
+            minCharacters: body.minCharacters ?? 4,
+            maxCharacters: body.maxCharacters ?? 60,
           },
         })
       }

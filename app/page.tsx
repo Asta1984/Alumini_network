@@ -54,15 +54,15 @@ export default function LandingPage() {
             </p>
             <ul className="space-y-2 mb-8 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">→</span>
-                <span>Write and share your memories</span>
+                <span className="text-primary mt-1"></span>
+                <span>Share your sweet memories</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">→</span>
-                <span>View AI-generated summaries</span>
+                <span className="text-primary mt-1"></span>
+                <span></span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">→</span>
+                <span className="text-primary mt-1"></span>
                 <span>Connect with your batch</span>
               </li>
             </ul>
@@ -80,19 +80,19 @@ export default function LandingPage() {
               <h3 className="text-2xl font-semibold text-foreground">Admin Panel</h3>
             </div>
             <p className="text-muted-foreground mb-6">
-              Manage the platform, moderate submissions, and ensure quality of the memory book experience.
+              Manage the platform
             </p>
             <ul className="space-y-2 mb-8 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">→</span>
-                <span>Manage student profiles</span>
+                <span className="text-primary mt-1"></span>
+                <span>Manage the platform</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">→</span>
+                <span className="text-primary mt-1"></span>
                 <span>Review submissions</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">→</span>
+                <span className="text-primary mt-1"></span>
                 <span>Generate onboarding links</span>
               </li>
             </ul>

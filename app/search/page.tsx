@@ -30,8 +30,10 @@ export default function SearchPage() {
       throw new Error('Search failed')
     }
     const data = await response.json()
-    return data.users || []
-  }, [])
+    // Filter out current user from results
+    const users = data.users || []
+    return users.filter((user: UserResult) => user.userId !== currentUser?.userId)
+  }, [currentUser?.userId])
 
   // Use async search hook with 400ms debounce
   const { results, isLoading, error, hasSearched } = useAsyncSearch(
@@ -121,75 +123,77 @@ export default function SearchPage() {
                   <p className="text-sm text-muted-foreground mb-4">
                     Found {results.length} alumni
                   </p>
-                  {results.map((result) => (
-                    <div
-                      key={result.userId}
-                      className="bg-card rounded-lg border border-border shadow-sm p-4 hover:border-primary hover:shadow-md transition cursor-pointer"
-                      onClick={() => router.push(`/profile/${result.userId}`)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          router.push(`/profile/${result.userId}`)
-                        }
-                      }}
-                    >
-                      <div className="flex items-center gap-4">
-                        {/* Avatar */}
-                        <div className="shrink-0">
-                          <div className="w-12 h-12 bg-linear-to-br from-primary to-primary/50 rounded-full flex items-center justify-center">
-                            {result.profilePictureUrl ? (
-                              <img
-                                src={result.profilePictureUrl}
-                                alt={result.fullName}
-                                className="w-12 h-12 rounded-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-white font-bold">
-                                {result.fullName.charAt(0).toUpperCase()}
-                              </span>
+                  {results.map((result) => {
+                    return (
+                      <div
+                        key={result.userId}
+                        className="rounded-lg border border-border shadow-sm p-4 transition cursor-pointer bg-card hover:border-primary hover:shadow-md"
+                        onClick={() => router.push(`/profile/${result.userId}`)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            router.push(`/profile/${result.userId}`)
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-4">
+                          {/* Avatar */}
+                          <div className="shrink-0">
+                            <div className="w-12 h-12 bg-linear-to-br from-primary to-primary/50 rounded-full flex items-center justify-center">
+                              {result.profilePictureUrl ? (
+                                <img
+                                  src={result.profilePictureUrl}
+                                  alt={result.fullName}
+                                  className="w-12 h-12 rounded-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-white font-bold">
+                                  {result.fullName.charAt(0).toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1">
+                            <p className="font-semibold text-foreground">{result.fullName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {result.enrollmentNumber}
+                            </p>
+                            {result.nickname && (
+                              <p className="text-sm text-primary font-medium">{result.nickname}</p>
                             )}
                           </div>
-                        </div>
 
-                        {/* Info */}
-                        <div className="flex-1">
-                          <p className="font-semibold text-foreground">{result.fullName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {result.enrollmentNumber}
-                          </p>
-                          {result.nickname && (
-                            <p className="text-sm text-primary font-medium">{result.nickname}</p>
+                          {/* LinkedIn Link */}
+                          {result.linkedInUrl && (
+                            <a
+                              href={result.linkedInUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 transition"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span className="text-sm font-medium">LinkedIn</span>
+                            </a>
                           )}
-                        </div>
 
-                        {/* LinkedIn Link */}
-                        {result.linkedInUrl && (
-                          <a
-                            href={result.linkedInUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 transition"
-                            onClick={(e) => e.stopPropagation()}
+                          {/* Visit Profile Button */}
+                          <Button
+                            variant="outline"
+                            className="border-border text-foreground hover:bg-secondary"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/profile/${result.userId}`)
+                            }}
                           >
-                            <span className="text-sm font-medium">LinkedIn</span>
-                          </a>
-                        )}
-
-                        {/* Visit Profile Button */}
-                        <Button
-                          variant="outline"
-                          className="border-border text-foreground hover:bg-secondary"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            router.push(`/profile/${result.userId}`)
-                          }}
-                        >
-                          Visit
-                        </Button>
+                            Visit
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>

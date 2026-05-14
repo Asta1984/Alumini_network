@@ -127,33 +127,59 @@ export default function AdminDashboard() {
   }
 
   // ── CSV Parsing ────────────────────────────────────────────────────────────
-  const parseCSV = (text: string) => {
-    const lines = text.trim().split('\n')
-    if (lines.length < 2) { setCsvError('CSV must have a header row and at least one data row'); return }
+const parseCSV = (text: string) => {
+  const lines = text
+    .replace(/^\uFEFF/, '')      // strip Excel BOM
+    .trim()
+    .split('\n')
+    .map(l => l.replace(/\r$/, ''))  // strip \r from Windows line endings
 
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'))
-    const required = ['full_name', 'enrollment_number', 'email', 'mobile']
-    const missing = required.filter(r => !headers.includes(r))
-
-    if (missing.length > 0) {
-      setCsvError(`Missing columns: ${missing.join(', ')}. Required: full_name, enrollment_number, email, mobile`)
-      return
-    }
-
-    const rows = lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''))
-      return Object.fromEntries(headers.map((h, i) => [h, values[i] || '']))
-    }).filter(r => r.enrollment_number)
-
-    setCsvData(rows.map(r => ({
-      fullName: r.full_name,
-      enrollmentNumber: r.enrollment_number,
-      email: r.email,
-      mobile: r.mobile,
-    })))
-    setCsvError('')
+  if (lines.length < 2) {
+    setCsvError('CSV must have a header row and at least one data row')
+    return
   }
 
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'))
+  const required = ['full_name', 'enrollment_number', 'email', 'mobile']
+  const missing = required.filter(r => !headers.includes(r))
+
+  if (missing.length > 0) {
+    setCsvError(`Missing columns: ${missing.join(', ')}. Required: full_name, enrollment_number, email, mobile`)
+    return
+  }
+
+  const rows = lines.slice(1)
+    .map(line => {
+      // handle quoted fields containing commas
+      const values: string[] = []
+      let current = ''
+      let inQuotes = false
+      for (const char of line) {
+        if (char === '"') { inQuotes = !inQuotes }
+        else if (char === ',' && !inQuotes) { values.push(current.trim()); current = '' }
+        else { current += char }
+      }
+      values.push(current.trim())
+
+      if (values.length !== headers.length) return null  // skip malformed rows
+
+      return Object.fromEntries(headers.map((h, i) => [h, values[i] || '']))
+    })
+    .filter((r): r is Record<string, string> => r !== null && !!r.enrollment_number)
+
+  if (rows.length === 0) {
+    setCsvError('No valid rows found after parsing')
+    return
+  }
+
+  setCsvData(rows.map(r => ({
+    fullName: r.full_name,
+    enrollmentNumber: r.enrollment_number,
+    email: r.email,
+    mobile: r.mobile,
+  })))
+  setCsvError('')
+}
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return

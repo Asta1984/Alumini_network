@@ -109,7 +109,7 @@ export default function LandingPage() {
       <footer className="border-t border-border mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <p className="text-center text-sm text-muted-foreground">
-            Surabhi Alumni Memory Book © 2024. Preserving memories, one story at a time.
+            Surabhi Alumni Memory Book © 2026. Preserving memories, one story at a time.
           </p>
         </div>
       </footer>

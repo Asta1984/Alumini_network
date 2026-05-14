@@ -11,6 +11,8 @@ interface Message {
   senderName: string
   senderEnrollment: string
   text: string
+  modifiedText?: string | null
+  originalText?: string
   characterCount: number
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'MODIFIED'
 }
@@ -85,8 +87,8 @@ export function MessageActionModal({ message, isOpen, onClose, onActionComplete 
       return
     }
 
-    if (modifiedText.length < 5 || modifiedText.length > 200) {
-      alert('Modified text must be between 5-200 characters')
+    if (modifiedText.length < 5 || modifiedText.length > 60) {
+      alert('Modified text must be between 5-60 characters')
       return
     }
 
@@ -157,9 +159,18 @@ export function MessageActionModal({ message, isOpen, onClose, onActionComplete 
           {/* Original Message */}
           <div className="bg-zinc-800/50 p-4 rounded-lg border border-zinc-700">
             <p className="text-sm text-zinc-400 mb-2">Original Message</p>
-            <p className="text-white whitespace-pre-wrap">{message.text}</p>
+            <p className="text-white whitespace-pre-wrap">{message.originalText || message.text}</p>
             <p className="text-xs text-zinc-500 mt-2">{message.characterCount} characters</p>
           </div>
+
+          {/* Modified Message (if exists) */}
+          {message.status === 'MODIFIED' && message.modifiedText && (
+            <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-700/50">
+              <p className="text-sm text-blue-400 mb-2">Modified Message</p>
+              <p className="text-white whitespace-pre-wrap">{message.modifiedText}</p>
+              <p className="text-xs text-blue-500 mt-2">{message.modifiedText.length} characters</p>
+            </div>
+          )}
 
           {/* Action Selection */}
           {message.status === 'PENDING' && (
@@ -193,19 +204,19 @@ export function MessageActionModal({ message, isOpen, onClose, onActionComplete 
                   <Textarea
                     value={modifiedText}
                     onChange={(e) => setModifiedText(e.target.value)}
-                    placeholder="Edit the message here (400-600 characters)"
+                    placeholder="Edit the message here (5-60 characters)"
                     className="bg-zinc-800 border-zinc-700 text-white"
                     rows={6}
                   />
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-zinc-500">
-                      {modifiedText.length} / 600 characters
+                      {modifiedText.length} / 60 characters
                     </span>
-                    {modifiedText.length < 400 && (
-                      <span className="text-sm text-red-500">Too short (min 400)</span>
+                    {modifiedText.length < 5 && (
+                      <span className="text-sm text-red-500">Too short (min 5)</span>
                     )}
-                    {modifiedText.length > 600 && (
-                      <span className="text-sm text-red-500">Too long (max 600)</span>
+                    {modifiedText.length > 60 && (
+                      <span className="text-sm text-red-500">Too long (max 60)</span>
                     )}
                   </div>
                 </div>

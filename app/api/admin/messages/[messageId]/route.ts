@@ -84,9 +84,9 @@ export async function POST(
       }
 
       // Validate character count
-      if (modifiedText.length < 400 || modifiedText.length > 600) {
+      if (modifiedText.length < 5 || modifiedText.length > 60) {
         return NextResponse.json(
-          { error: 'Modified text must be between 400-600 characters' },
+          { error: 'Modified text must be between 5-60 characters' },
           { status: 400 }
         )
       }

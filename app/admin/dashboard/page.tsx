@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { MessagesTab } from '@/components/admin/messages-tab'
 import { SummariesTab } from '@/components/admin/summaries-tab'
 import { SettingsTab } from '@/components/admin/settings-tab'
+import { UsersTab } from '@/components/admin/user-tab'
 
 interface Student {
   id: string
@@ -29,7 +30,7 @@ interface Pagination {
   pages: number
 }
 
-type Tab = 'students' | 'messages' | 'summaries' | 'settings' | 'import'
+type Tab = 'students' | 'users' | 'messages' | 'summaries' | 'settings' | 'import'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -217,7 +218,7 @@ export default function AdminDashboard() {
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
-          {(['students', 'messages', 'summaries', 'settings', 'import'] as Tab[]).map(t => (
+          {(['students', 'users', 'messages', 'summaries', 'settings', 'import'] as Tab[]).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -227,7 +228,7 @@ export default function AdminDashboard() {
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
               }`}
             >
-              {t === 'students' ? '👥 Students' : t === 'messages' ? '💬 Messages' : t === 'summaries' ? '📝 Summaries' : t === 'settings' ? '⚙️ Settings' : '📤 Import CSV'}
+              {t === 'students' ? '👥 Students' : t === 'users' ? '🏷️ Alumni Tags' : t === 'messages' ? '💬 Messages' : t === 'summaries' ? '📝 Summaries' : t === 'settings' ? '⚙️ Settings' : '📤 Import CSV'}
             </button>
           ))}
         </nav>
@@ -408,6 +409,11 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* ── Users/Alumni Tags Tab ──────────────────────────────────────────── */}
+        {tab === 'users' && (
+          <UsersTab />
+        )}
+
         {/* ── Messages Tab ──────────────────────────────────────────────────── */}
         {tab === 'messages' && (
           <div>
@@ -538,3 +544,4 @@ export default function AdminDashboard() {
     </div>
   )
 }
+

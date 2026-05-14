@@ -1,6 +1,5 @@
 import 'dotenv/config'
 import { PrismaClient, AdminRole } from "../generated/prisma/client";
-import bcrypt from 'bcrypt'
 import { PrismaPg } from '@prisma/adapter-pg'
 const prisma = new PrismaClient({adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })})
 
@@ -9,13 +8,13 @@ const prisma = new PrismaClient({adapter: new PrismaPg({ connectionString: proce
 async function main() {
   try {
     const testStudent = await prisma.user.upsert({
-      where: { enrollmentNumber: '0101AU191001' },
+      where: { enrollmentNumber: '0101AU191002' },
       update: {},
       create: {
-        enrollmentNumber: '0101AU191001',
-        fullName: 'Sumit Kumar',
-        email: '9bankitamandal@gmail.com',
-        mobile: '9876543210',
+        enrollmentNumber: '0101AU191002',
+        fullName: 'Ranu Rahandale',
+        email: 'mandalsalil75@gmail.com',
+        mobile: '9009247906',
         isProfileCompleted: false,
         nickname: null,
         bio: null,

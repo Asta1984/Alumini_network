@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
         select: {
           id: true,
           messageText: true,
+          modifiedText: true,
           characterCount: true,
           createdAt: true,
           status: true,
@@ -52,7 +53,9 @@ export async function GET(request: NextRequest) {
         senderName: m.sender.fullName,
         senderEnrollment: m.sender.enrollmentNumber,
         senderId: m.sender.id,
-        text: m.messageText,
+        text: m.status === 'MODIFIED' && m.modifiedText ? m.modifiedText : m.messageText,
+        modifiedText: m.modifiedText,
+        originalText: m.messageText,
         characterCount: m.characterCount,
         createdAt: m.createdAt,
         status: m.status,

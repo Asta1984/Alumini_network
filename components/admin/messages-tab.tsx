@@ -12,6 +12,8 @@ interface Message {
   senderEnrollment: string
   senderId: string
   text: string
+  modifiedText?: string | null
+  originalText?: string
   characterCount: number
   createdAt: Date
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'MODIFIED'

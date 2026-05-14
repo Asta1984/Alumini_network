@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { extractTokenFromCookie, verifyToken } from '@/lib/auth'
-import { SocialPlatform } from '@prisma/client'
+import { SocialPlatform } from '@/generated/prisma/client'
 
 interface SocialProfileInput {
   platform: SocialPlatform

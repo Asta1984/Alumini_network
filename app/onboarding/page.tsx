@@ -105,9 +105,7 @@ export default function OnboardingPage() {
               <label className="block text-sm font-medium text-foreground mb-2">Full Name *</label>
               <Input
                 type="text"
-                placeholder="Your full name"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
                 disabled={true}
                 className="bg-muted cursor-not-allowed"
               />
@@ -119,9 +117,7 @@ export default function OnboardingPage() {
               <label className="block text-sm font-medium text-foreground mb-2">Enrollment Number *</label>
               <Input
                 type="text"
-                placeholder="Your enrollment number"
                 value={enrollmentNumber}
-                onChange={(e) => setEnrollmentNumber(e.target.value)}
                 disabled={true}
                 className="bg-muted cursor-not-allowed"
               />

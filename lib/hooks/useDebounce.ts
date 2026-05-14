@@ -20,7 +20,7 @@ import { useState, useEffect } from 'react'
  *   }
  * }, [debouncedQuery])
  */
-export function useDebounce<T>(value: T, delay: number = 300): T {
+export function useDebounce<T>(value: T, delay: number = 800): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value)
 
   useEffect(() => {
@@ -60,7 +60,7 @@ interface UseAsyncSearchReturn<T> {
 export function useAsyncSearch<T>(
   searchQuery: string,
   searchFn: (query: string) => Promise<T[]>,
-  delay: number = 300,
+  delay: number = 800,
 ): UseAsyncSearchReturn<T> {
   const debouncedQuery = useDebounce(searchQuery, delay)
   const [results, setResults] = useState<T[]>([])

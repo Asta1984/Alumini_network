@@ -222,6 +222,7 @@ export default function MemoriesPage() {
                   onSelect={setRecipientId}
                   selectedId={recipientId}
                   disabled={!isWindowOpen}
+                  currentUserId={user?.userId}
                 />
 
                 {/* Message Textarea */}

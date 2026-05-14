@@ -16,35 +16,46 @@ interface BatchmatesDropdownProps {
   onSelect: (studentId: string) => void
   selectedId?: string
   disabled?: boolean
+  currentUserId?: string
 }
 
-export function BatchmatesDropdown({ onSelect, selectedId, disabled }: BatchmatesDropdownProps) {
+export function BatchmatesDropdown({ onSelect, selectedId, disabled, currentUserId }: BatchmatesDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
+  const [selfMessageError, setSelfMessageError] = useState(false)
 
   // Memoize the search function to prevent infinite loops
   const searchFn = useCallback(async (query: string): Promise<Student[]> => {
     const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`)
     if (res.ok) {
       const data = await res.json()
-      return (data.users || []).map((u: any) => ({
-        id: u.userId,
-        name: u.fullName,
-        enrollment: u.enrollmentNumber,
-      }))
+      return (data.users || [])
+        .filter((u: any) => u.userId !== currentUserId) // Filter out self
+        .map((u: any) => ({
+          id: u.userId,
+          name: u.fullName,
+          enrollment: u.enrollmentNumber,
+        }))
     }
     return []
-  }, [])
+  }, [currentUserId])
 
   // Use async search hook with 400ms debounce
   const { results, isLoading } = useAsyncSearch(search, searchFn, 400)
 
   const handleSelect = (student: Student) => {
+    // Additional validation - should not happen but good safety check
+    if (student.id === currentUserId) {
+      setSelfMessageError(true)
+      setTimeout(() => setSelfMessageError(false), 3000)
+      return
+    }
     setSelectedStudent(student)
     onSelect(student.id)
     setIsOpen(false)
     setSearch('')
+    setSelfMessageError(false)
   }
 
   const handleClear = () => {
@@ -57,6 +68,12 @@ export function BatchmatesDropdown({ onSelect, selectedId, disabled }: Batchmate
     <div className="relative">
       <div className="space-y-2">
         <label className="block text-sm font-medium text-foreground">Write to a Batchmate</label>
+        
+        {selfMessageError && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-700">You cannot send a message to yourself. Please select a different batchmate.</p>
+          </div>
+        )}
         
         {selectedStudent ? (
           <div className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg bg-secondary">

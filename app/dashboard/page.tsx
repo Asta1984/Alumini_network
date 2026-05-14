@@ -31,8 +31,8 @@ export default function DashboardPage() {
         <header className="border-b border-border bg-card">
           <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Campus Connect</h1>
-              <p className="text-sm text-muted-foreground">Student Social Network</p>
+              <h1 className="text-2xl font-bold text-foreground">Surabhi Alumni Memory Book</h1>
+              <p className="text-sm text-muted-foreground">Preserve and celebrate alumni memories</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
@@ -58,7 +58,7 @@ export default function DashboardPage() {
               <div className="bg-card rounded-lg border border-border shadow-sm p-6 mb-6">
                 <h2 className="text-xl font-bold text-foreground mb-4">Welcome back, {user?.fullName}!</h2>
                 <p className="text-muted-foreground mb-4">
-                  This is your Campus Connect dashboard. Start connecting with other students by posting on their walls.
+                  Explore alumni memories, contribute your own, and celebrate the community you're part of.
                 </p>
                 <Link href={`/profile/${user?.userId}`}>
                   <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
@@ -71,11 +71,17 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-card rounded-lg border border-border shadow-sm p-4">
                   <p className="text-sm text-muted-foreground">Your Profile</p>
-                  <p className="text-2xl font-bold text-foreground">@{user?.fullName}</p>
+                  <p className="text-2xl font-bold text-foreground">{user?.fullName}</p>
                 </div>
                 <div className="bg-card rounded-lg border border-border shadow-sm p-4">
-                  <p className="text-sm text-muted-foreground">Member Since</p>
-                  <p className="text-lg font-semibold text-foreground">Today</p>
+                  <p className="text-sm text-muted-foreground">Joined</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {user?.createdAt && new Date(user.createdAt).toLocaleDateString('en-IN', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                   })}
+                  </p>
                 </div>
               </div>
             </div>
@@ -85,6 +91,14 @@ export default function DashboardPage() {
               <div className="bg-card rounded-lg border border-border shadow-sm p-6">
                 <h3 className="text-lg font-bold text-foreground mb-4">Quick Actions</h3>
                 <div className="space-y-2">
+                  <Link href="/alumni-wall" className="block">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start border-border text-foreground hover:bg-secondary"
+                    >
+                      Alumni Memoir Wall
+                    </Button>
+                  </Link>
                   <Link href="/memories" className="block">
                     <Button
                       variant="ghost"
@@ -106,7 +120,7 @@ export default function DashboardPage() {
                       variant="ghost"
                       className="w-full justify-start border-border text-foreground hover:bg-secondary"
                     >
-                      Find Students
+                      Find Alumni
                     </Button>
                   </Link>
                 </div>
@@ -118,15 +132,15 @@ export default function DashboardPage() {
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start">
                     <span className="mr-2">•</span>
-                    <span>Search for classmates and visit their profiles</span>
+                    <span>Explore the alumni memoir wall to read messages</span>
                   </li>
                   <li className="flex items-start">
                     <span className="mr-2">•</span>
-                    <span>Post up to 50 words on their walls</span>
+                    <span>Write a memory for fellow alumni</span>
                   </li>
                   <li className="flex items-start">
                     <span className="mr-2">•</span>
-                    <span>Mention other students using @username</span>
+                    <span>Search for classmates and their profiles</span>
                   </li>
                 </ul>
               </div>

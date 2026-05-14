@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/auth.store'
 import { ProtectedRoute } from '@/lib/protected-route'
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,7 @@ interface UserResult {
 
 export default function SearchPage() {
   const { user: currentUser } = useAuthStore()
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
 
   // Memoize the search function to prevent infinite loops
@@ -120,61 +122,73 @@ export default function SearchPage() {
                     Found {results.length} alumni
                   </p>
                   {results.map((result) => (
-                    <Link key={result.userId} href={`/profile/${result.userId}`}>
-                      <div className="bg-card rounded-lg border border-border shadow-sm p-4 hover:border-primary hover:shadow-md transition cursor-pointer">
-                        <div className="flex items-center gap-4">
-                          {/* Avatar */}
-                          <div className="shrink-0">
-                            <div className="w-12 h-12 bg-linear-to-br from-primary to-primary/50 rounded-full flex items-center justify-center">
-                              {result.profilePictureUrl ? (
-                                <img
-                                  src={result.profilePictureUrl}
-                                  alt={result.fullName}
-                                  className="w-12 h-12 rounded-full object-cover"
-                                />
-                              ) : (
-                                <span className="text-white font-bold">
-                                  {result.fullName.charAt(0).toUpperCase()}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Info */}
-                          <div className="flex-1">
-                            <p className="font-semibold text-foreground">{result.fullName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {result.enrollmentNumber}
-                            </p>
-                            {result.nickname && (
-                              <p className="text-sm text-primary font-medium">{result.nickname}</p>
+                    <div
+                      key={result.userId}
+                      className="bg-card rounded-lg border border-border shadow-sm p-4 hover:border-primary hover:shadow-md transition cursor-pointer"
+                      onClick={() => router.push(`/profile/${result.userId}`)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          router.push(`/profile/${result.userId}`)
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-4">
+                        {/* Avatar */}
+                        <div className="shrink-0">
+                          <div className="w-12 h-12 bg-linear-to-br from-primary to-primary/50 rounded-full flex items-center justify-center">
+                            {result.profilePictureUrl ? (
+                              <img
+                                src={result.profilePictureUrl}
+                                alt={result.fullName}
+                                className="w-12 h-12 rounded-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-white font-bold">
+                                {result.fullName.charAt(0).toUpperCase()}
+                              </span>
                             )}
                           </div>
-
-                          {/* LinkedIn Link */}
-                          {result.linkedInUrl && (
-                            <a
-                              href={result.linkedInUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 transition"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <span className="text-sm font-medium">LinkedIn</span>
-                            </a>
-                          )}
-
-                          {/* Visit Profile Button */}
-                          <Button
-                            variant="outline"
-                            className="border-border text-foreground hover:bg-secondary"
-                            asChild
-                          >
-                            <span>Visit</span>
-                          </Button>
                         </div>
+
+                        {/* Info */}
+                        <div className="flex-1">
+                          <p className="font-semibold text-foreground">{result.fullName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {result.enrollmentNumber}
+                          </p>
+                          {result.nickname && (
+                            <p className="text-sm text-primary font-medium">{result.nickname}</p>
+                          )}
+                        </div>
+
+                        {/* LinkedIn Link */}
+                        {result.linkedInUrl && (
+                          <a
+                            href={result.linkedInUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 transition"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <span className="text-sm font-medium">LinkedIn</span>
+                          </a>
+                        )}
+
+                        {/* Visit Profile Button */}
+                        <Button
+                          variant="outline"
+                          className="border-border text-foreground hover:bg-secondary"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            router.push(`/profile/${result.userId}`)
+                          }}
+                        >
+                          Visit
+                        </Button>
                       </div>
-                    </Link>
+                    </div>
                   ))}
                 </div>
               )}

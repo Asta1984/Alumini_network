@@ -118,10 +118,12 @@ export const useAuthStore = create<AuthState>()(
       },
 
       validateOnboardingLink: async (token: string) => {
-        const res = await fetch('/api/auth/signup', {
+        const res = await fetch('/api/auth/onboarding-verify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Invalid onboarding link')

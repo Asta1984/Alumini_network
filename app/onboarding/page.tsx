@@ -1,7 +1,8 @@
+
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/auth.store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,7 +20,8 @@ export default function OnboardingPage() {
   const { user } = useAuthStore()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
-
+  const searchParams = useSearchParams()
+  const [onboardingToken, setOnboardingToken] = useState<string | null>(null)
   const [fullName, setFullName] = useState(user?.fullName || '')
   const [nickname, setNickname] = useState(user?.nickname || '')
   const [bio, setBio] = useState(user?.bio || '')
@@ -28,8 +30,24 @@ export default function OnboardingPage() {
   const [github, setGithub] = useState('')
   const [twitter, setTwitter] = useState('')
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    // Extract token from URL on mount
+  useEffect(() => {
+    const token = searchParams.get('token')
+    if (!token) {
+      toast({
+        title: 'Error',
+        description: 'Invalid or missing onboarding link',
+        variant: 'destructive',
+      })
+      router.push('/')
+      return
+    }
+    setOnboardingToken(token)
+  }, [searchParams, toast, router])
+
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (!onboardingToken) return
     setIsLoading(true)
 
     try {
@@ -57,6 +75,7 @@ export default function OnboardingPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          onboardingToken,
           fullName: fullName.trim(),
           nickname: nickname.trim() || undefined,
           bio: bio.trim() || undefined,

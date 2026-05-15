@@ -15,8 +15,19 @@ interface SocialProfileInput {
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieHeader = request.headers.get('cookie')
-    const token = extractTokenFromCookie(cookieHeader)
+    let token: string | null = null
+
+    // 1. Check for onboarding token in Authorization header (takes precedence)
+    const authHeader = request.headers.get('authorization')
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.slice(7) // Remove 'Bearer ' prefix
+    }
+
+    // 2. Fallback to cookie token if no header token
+    if (!token) {
+      const cookieHeader = request.headers.get('cookie')
+      token = extractTokenFromCookie(cookieHeader)
+    }
 
     if (!token) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })

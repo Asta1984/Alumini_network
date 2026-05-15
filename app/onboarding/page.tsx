@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/auth.store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,9 +16,19 @@ interface SocialProfile {
 
 export default function OnboardingPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user } = useAuthStore()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [onboardingToken, setOnboardingToken] = useState<string | null>(null)
+
+  // Extract onboarding token from URL on mount
+  useEffect(() => {
+    const token = searchParams.get('token')
+    if (token) {
+      setOnboardingToken(token)
+    }
+  }, [searchParams])
 
   const [fullName, setFullName] = useState(user?.fullName || '')
   const [enrollmentNumber, setEnrollmentNumber] = useState(user?.enrollmentNumber || '')
@@ -54,9 +64,16 @@ export default function OnboardingPage() {
       if (github.trim()) socialProfiles.push({ platform: 'GITHUB', profileUrl: github.trim() })
       if (twitter.trim()) socialProfiles.push({ platform: 'TWITTER', profileUrl: twitter.trim() })
 
+      // If onboarding token is present, use it in the Authorization header
+      // Otherwise, let the API use the stored cookie token
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (onboardingToken) {
+        headers['Authorization'] = `Bearer ${onboardingToken}`
+      }
+
       const response = await fetch('/api/auth/complete-profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           fullName: fullName.trim(),
           nickname: nickname.trim() || undefined,

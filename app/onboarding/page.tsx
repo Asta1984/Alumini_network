@@ -7,18 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/use-toast'
-import Link from 'next/link'
 
 interface SocialProfile {
   platform: 'LINKEDIN' | 'INSTAGRAM' | 'GITHUB' | 'TWITTER' | 'PORTFOLIO'
   profileUrl: string
-}
-
-interface PrefilledData {
-  fullName: string
-  enrollmentNumber: string
-  email: string
-  mobileNumber: string
 }
 
 const SOCIAL_PLATFORMS = [
@@ -33,12 +25,9 @@ export default function OnboardingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
-  const { validateOnboardingLink } = useAuthStore()
 
-  const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [onboardingToken, setOnboardingToken] = useState<string | null>(null)
-  const [prefilledData, setPrefilledData] = useState<PrefilledData | null>(null)
 
   // Editable fields
   const [nickname, setNickname] = useState('')
@@ -51,7 +40,7 @@ export default function OnboardingPage() {
     PORTFOLIO: '',
   })
 
-  // Extract token and fetch prefilled data
+  // Extract token from URL on mount
   useEffect(() => {
     const token = searchParams.get('token')
     if (!token) {
@@ -60,40 +49,11 @@ export default function OnboardingPage() {
         description: 'Invalid or missing onboarding link',
         variant: 'destructive',
       })
-      setIsLoading(false)
+      router.push('/')
       return
     }
-
-    const fetchPrefilledData = async () => {
-      try {
-        setOnboardingToken(token)
-        const result = await validateOnboardingLink(token)
-
-        if (result.isProfileCompleted) {
-          toast({
-            title: 'Profile Already Completed',
-            description: 'Your profile has already been completed',
-          })
-          router.push('/dashboard')
-          return
-        }
-
-        if (result.prefilled) {
-          setPrefilledData(result.prefilled)
-        }
-      } catch (error) {
-        toast({
-          title: 'Error',
-          description: error instanceof Error ? error.message : 'Failed to verify onboarding link',
-          variant: 'destructive',
-        })
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchPrefilledData()
-  }, [searchParams, validateOnboardingLink, toast, router])
+    setOnboardingToken(token)
+  }, [searchParams, toast, router])
 
   const handleSocialProfileChange = (platform: string, value: string) => {
     setSocialProfiles((prev) => ({
@@ -104,7 +64,7 @@ export default function OnboardingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!onboardingToken || !prefilledData) return
+    if (!onboardingToken) return
 
     setIsSubmitting(true)
 
@@ -166,26 +126,12 @@ export default function OnboardingPage() {
     }
   }
 
-  if (isLoading) {
+  if (!onboardingToken) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your onboarding details...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!prefilledData) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Invalid Link</h1>
-          <p className="text-muted-foreground mb-6">This onboarding link is invalid or has expired.</p>
-          <Link href="/">
-            <Button>Go to Home</Button>
-          </Link>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     )
@@ -205,48 +151,8 @@ export default function OnboardingPage() {
       <main className="max-w-2xl mx-auto px-4 py-8">
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-lg p-8 space-y-8">
           
-          {/* Prefilled Information Section */}
-          <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4">Your Information</h3>
-            <p className="text-sm text-muted-foreground mb-4">This information was added by your admin and cannot be changed</p>
-
-            <div className="space-y-4">
-              {/* Full Name */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Full Name</label>
-                <div className="px-4 py-3 rounded-md bg-secondary/30 border border-border text-foreground font-medium">
-                  {prefilledData.fullName}
-                </div>
-              </div>
-
-              {/* Enrollment Number */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Enrollment Number</label>
-                <div className="px-4 py-3 rounded-md bg-secondary/30 border border-border text-foreground font-mono text-sm">
-                  {prefilledData.enrollmentNumber}
-                </div>
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Email</label>
-                <div className="px-4 py-3 rounded-md bg-secondary/30 border border-border text-foreground text-sm">
-                  {prefilledData.email}
-                </div>
-              </div>
-
-              {/* Mobile */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Mobile Number</label>
-                <div className="px-4 py-3 rounded-md bg-secondary/30 border border-border text-foreground">
-                  {prefilledData.mobileNumber}
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Optional Information Section */}
-          <div className="border-t border-border pt-8">
+          <div>
             <h3 className="text-lg font-semibold text-foreground mb-4">Additional Information</h3>
             <p className="text-sm text-muted-foreground mb-4">Help us get to know you better</p>
 

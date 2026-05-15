@@ -131,7 +131,7 @@ export default function OnboardingPage() {
         }
       })
 
-      // Submit with onboarding token in header
+      // Submit with onboarding token in header (takes precedence over stored browser token)
       const response = await fetch('/api/auth/complete-profile', {
         method: 'POST',
         headers: {

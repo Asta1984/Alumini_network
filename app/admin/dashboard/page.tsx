@@ -1,7 +1,7 @@
 // app/admin/dashboard/page.tsx
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAdminStore } from '@/store/admin.store'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,9 @@ import { MessagesTab } from '@/components/admin/messages-tab'
 import { SummariesTab } from '@/components/admin/summaries-tab'
 import { SettingsTab } from '@/components/admin/settings-tab'
 import { UsersTab } from '@/components/admin/user-tab'
+import { AdminSidebar } from '@/components/admin/sidebar'
+import { useAsyncSearch } from '@/lib/hooks/useDebounce'
+import { motion } from 'framer-motion'
 
 interface Student {
   id: string
@@ -34,14 +37,13 @@ type Tab = 'students' | 'users' | 'messages' | 'summaries' | 'settings' | 'impor
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const { admin, hydrate, isAuthenticated, isLoading, logout } = useAdminStore()
+  const { hydrate, isAuthenticated, isLoading} = useAdminStore()
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true) // ← replaces sidebarWidth + polling useEffect
 
   const [tab, setTab] = useState<Tab>('students')
   const [students, setStudents] = useState<Student[]>([])
   const [pagination, setPagination] = useState<Pagination>({ page: 1, total: 0, pages: 1 })
-  const [search, setSearch] = useState('')
-  const [studentsLoading, setStudentsLoading] = useState(false)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [searchQuery, setSearchQuery] = useState('')
   const [linkLoading, setLinkLoading] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [generatedLinks, setGeneratedLinks] = useState<Record<string, string>>({})
@@ -61,11 +63,24 @@ export default function AdminDashboard() {
   }, [isLoading, isAuthenticated, router])
 
   useEffect(() => {
-    if (isAuthenticated) fetchStudents(1, search)
+    if (isAuthenticated) fetchStudents(1, '')
   }, [isAuthenticated])
 
+  // Search function for useAsyncSearch
+  const searchFn = useCallback(async (query: string) => {
+    const params = new URLSearchParams({ page: '1' })
+    if (query) params.set('q', query)
+    const res = await fetch(`/api/admin/students?${params}`)
+    if (!res.ok) throw new Error('Search failed')
+    const data = await res.json()
+    setStudents(data.students)
+    setPagination(data.pagination)
+    return data.students
+  }, [])
+
+  const { results, isLoading: searchLoading } = useAsyncSearch(searchQuery, searchFn, 400)
+
   const fetchStudents = async (page = 1, q = '') => {
-    setStudentsLoading(true)
     try {
       const params = new URLSearchParams({ page: String(page) })
       if (q) params.set('q', q)
@@ -75,14 +90,9 @@ export default function AdminDashboard() {
         setStudents(data.students)
         setPagination(data.pagination)
       }
-    } finally {
-      setStudentsLoading(false)
+    } catch (err) {
+      console.error('Failed to fetch students:', err)
     }
-  }
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    fetchStudents(1, search)
   }
 
   const generateLink = async (studentId: string) => {
@@ -96,7 +106,7 @@ export default function AdminDashboard() {
       const data = await res.json()
       if (res.ok) {
         setGeneratedLinks(prev => ({ ...prev, [studentId]: data.url }))
-        fetchStudents(pagination.page, search)
+        fetchStudents(pagination.page, searchQuery)
       }
     } finally {
       setLinkLoading(null)
@@ -114,7 +124,7 @@ export default function AdminDashboard() {
       })
       const data = await res.json()
       setBulkResult(data.message)
-      fetchStudents(pagination.page, search)
+      fetchStudents(pagination.page, searchQuery)
     } finally {
       setBulkLinkLoading(false)
     }
@@ -127,59 +137,59 @@ export default function AdminDashboard() {
   }
 
   // ── CSV Parsing ────────────────────────────────────────────────────────────
-const parseCSV = (text: string) => {
-  const lines = text
-    .replace(/^\uFEFF/, '')      // strip Excel BOM
-    .trim()
-    .split('\n')
-    .map(l => l.replace(/\r$/, ''))  // strip \r from Windows line endings
+  const parseCSV = (text: string) => {
+    const lines = text
+      .replace(/^\uFEFF/, '')
+      .trim()
+      .split('\n')
+      .map(l => l.replace(/\r$/, ''))
 
-  if (lines.length < 2) {
-    setCsvError('CSV must have a header row and at least one data row')
-    return
+    if (lines.length < 2) {
+      setCsvError('CSV must have a header row and at least one data row')
+      return
+    }
+
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'))
+    const required = ['full_name', 'enrollment_number', 'email', 'mobile']
+    const missing = required.filter(r => !headers.includes(r))
+
+    if (missing.length > 0) {
+      setCsvError(`Missing columns: ${missing.join(', ')}. Required: full_name, enrollment_number, email, mobile`)
+      return
+    }
+
+    const rows = lines.slice(1)
+      .map(line => {
+        const values: string[] = []
+        let current = ''
+        let inQuotes = false
+        for (const char of line) {
+          if (char === '"') { inQuotes = !inQuotes }
+          else if (char === ',' && !inQuotes) { values.push(current.trim()); current = '' }
+          else { current += char }
+        }
+        values.push(current.trim())
+
+        if (values.length !== headers.length) return null
+
+        return Object.fromEntries(headers.map((h, i) => [h, values[i] || '']))
+      })
+      .filter((r): r is Record<string, string> => r !== null && !!r.enrollment_number)
+
+    if (rows.length === 0) {
+      setCsvError('No valid rows found after parsing')
+      return
+    }
+
+    setCsvData(rows.map(r => ({
+      fullName: r.full_name,
+      enrollmentNumber: r.enrollment_number,
+      email: r.email,
+      mobile: r.mobile,
+    })))
+    setCsvError('')
   }
 
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'))
-  const required = ['full_name', 'enrollment_number', 'email', 'mobile']
-  const missing = required.filter(r => !headers.includes(r))
-
-  if (missing.length > 0) {
-    setCsvError(`Missing columns: ${missing.join(', ')}. Required: full_name, enrollment_number, email, mobile`)
-    return
-  }
-
-  const rows = lines.slice(1)
-    .map(line => {
-      // handle quoted fields containing commas
-      const values: string[] = []
-      let current = ''
-      let inQuotes = false
-      for (const char of line) {
-        if (char === '"') { inQuotes = !inQuotes }
-        else if (char === ',' && !inQuotes) { values.push(current.trim()); current = '' }
-        else { current += char }
-      }
-      values.push(current.trim())
-
-      if (values.length !== headers.length) return null  // skip malformed rows
-
-      return Object.fromEntries(headers.map((h, i) => [h, values[i] || '']))
-    })
-    .filter((r): r is Record<string, string> => r !== null && !!r.enrollment_number)
-
-  if (rows.length === 0) {
-    setCsvError('No valid rows found after parsing')
-    return
-  }
-
-  setCsvData(rows.map(r => ({
-    fullName: r.full_name,
-    enrollmentNumber: r.enrollment_number,
-    email: r.email,
-    mobile: r.mobile,
-  })))
-  setCsvError('')
-}
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -236,41 +246,14 @@ const parseCSV = (text: string) => {
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
       {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-56 bg-zinc-900 border-r border-zinc-800 flex flex-col">
-        <div className="p-4 border-b border-zinc-800">
-          <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Surabhi Admin</p>
-          <p className="font-semibold text-white truncate">{admin?.name}</p>
-          <p className="text-xs text-zinc-500 truncate">{admin?.email}</p>
-        </div>
+      <AdminSidebar activeTab={tab} onTabChange={setTab} onCollapse={setSidebarCollapsed} />
 
-        <nav className="flex-1 p-3 space-y-1">
-          {(['students', 'users', 'messages', 'summaries', 'settings', 'import'] as Tab[]).map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition capitalize ${
-                tab === t
-                  ? 'bg-violet-600 text-white'
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-              }`}
-            >
-              {t === 'students' ? ' Students' : t === 'users' ? ' Alumni Tags' : t === 'messages' ? 'Messages' : t === 'summaries' ? 'Summaries' : t === 'settings' ? ' Settings' : 'Import CSV'}
-            </button>
-          ))}
-        </nav>
-
-        <div className="p-3 border-t border-zinc-800">
-          <button
-            onClick={async () => { await logout(); router.push('/admin/login') }}
-            className="w-full text-left px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
-
-      {/* Main */}
-      <div className="ml-56 p-8">
+      {/* Main — margin driven by framer-motion, in sync with sidebar transition */}
+      <motion.div
+        className="p-8"
+        animate={{ marginLeft: sidebarCollapsed ? '3.05rem' : '15rem' }}
+        transition={{ type: 'tween', ease: 'easeOut', duration: 0.2 }}
+      >
 
         {/* ── Students Tab ──────────────────────────────────────────────────── */}
         {tab === 'students' && (
@@ -295,27 +278,25 @@ const parseCSV = (text: string) => {
             </div>
 
             {/* Search */}
-            <form onSubmit={handleSearch} className="flex gap-2 mb-6">
+            <div className="flex gap-2 mb-6 items-center">
               <Input
                 placeholder="Search by name, enrollment, or email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 max-w-sm"
               />
-              <Button type="submit" variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
-                Search
-              </Button>
-              {search && (
+              {searchLoading && <span className="text-xs text-zinc-500">Searching...</span>}
+              {searchQuery && (
                 <Button
                   type="button"
                   variant="ghost"
                   className="text-zinc-500 hover:text-white"
-                  onClick={() => { setSearch(''); fetchStudents(1, '') }}
+                  onClick={() => { setSearchQuery(''); fetchStudents(1, '') }}
                 >
                   Clear
                 </Button>
               )}
-            </form>
+            </div>
 
             {/* Stats bar */}
             <div className="grid grid-cols-4 gap-3 mb-6">
@@ -334,7 +315,7 @@ const parseCSV = (text: string) => {
 
             {/* Table */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-              {studentsLoading ? (
+              {searchLoading ? (
                 <div className="flex items-center justify-center py-16">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-violet-500" />
                 </div>
@@ -415,7 +396,7 @@ const parseCSV = (text: string) => {
                     variant="outline"
                     size="sm"
                     disabled={pagination.page <= 1}
-                    onClick={() => fetchStudents(pagination.page - 1, search)}
+                    onClick={() => fetchStudents(pagination.page - 1, searchQuery)}
                     className="border-zinc-700 text-zinc-400 hover:bg-zinc-800"
                   >
                     Previous
@@ -424,7 +405,7 @@ const parseCSV = (text: string) => {
                     variant="outline"
                     size="sm"
                     disabled={pagination.page >= pagination.pages}
-                    onClick={() => fetchStudents(pagination.page + 1, search)}
+                    onClick={() => fetchStudents(pagination.page + 1, searchQuery)}
                     className="border-zinc-700 text-zinc-400 hover:bg-zinc-800"
                   >
                     Next
@@ -566,8 +547,7 @@ const parseCSV = (text: string) => {
             </Button>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   )
 }
-

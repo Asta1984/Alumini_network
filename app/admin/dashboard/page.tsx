@@ -12,6 +12,7 @@ import { SettingsTab } from '@/components/admin/settings-tab'
 import { UsersTab } from '@/components/admin/user-tab'
 import { AdminSidebar } from '@/components/admin/sidebar'
 import { useAsyncSearch } from '@/lib/hooks/useDebounce'
+import { TableSkeleton } from '@/components/skeletons'
 import { motion } from 'framer-motion'
 
 interface Student {
@@ -316,9 +317,7 @@ export default function AdminDashboard() {
             {/* Table */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
               {searchLoading ? (
-                <div className="flex items-center justify-center py-16">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-violet-500" />
-                </div>
+                <TableSkeleton rows={5} columns={6} />
               ) : students.length === 0 ? (
                 <div className="text-center py-16 text-zinc-500">
                   <p className="text-lg">No students found</p>

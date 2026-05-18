@@ -47,8 +47,8 @@ export default function MemoriesPage() {
   // Window & limits state
   const [window, setWindow] = useState<WindowData | null>(null)
   const [limits, setLimits] = useState<LimitData>({
-    minCharacters: 400,
-    maxCharacters: 600,
+    minCharacters: 4,
+    maxCharacters: 60,
     maxPerUser: 100,
   })
 
@@ -83,8 +83,8 @@ export default function MemoriesPage() {
             endDate: windowData.endDate,
           })
           setLimits({
-            minCharacters: windowData.minCharacters || 400,
-            maxCharacters: windowData.maxCharacters || 600,
+            minCharacters: windowData.minCharacters || 4,
+            maxCharacters: windowData.maxCharacters || 60,
             maxPerUser: windowData.maxPerUser || 100,
           })
         }
@@ -94,7 +94,7 @@ export default function MemoriesPage() {
           setSentMessages(messagesData.messages || [])
         }
       } catch (error) {
-        console.error('[v0] Failed to load data:', error)
+        console.error('Failed to load data:', error)
         toast.error('Failed to load memory data')
       }
     }
@@ -143,7 +143,7 @@ export default function MemoriesPage() {
         throw new Error(error.error || 'Failed to send message')
       }
 
-      toast.success('Memory sent successfully! Admin will review it.')
+      toast.success('Memory sent successfully!')
 
       // Reset form
       setMessageText('')

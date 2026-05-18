@@ -184,7 +184,7 @@ export default function AlumniProfilePage() {
                   <h2 className="text-2xl font-bold text-foreground mb-2">Memory</h2>
                   <p className="text-sm text-muted-foreground">
                     {isOwnProfile
-                      ? 'Your approved alumni memory summary'
+                      ? 'Your memory summary'
                       : `${profile.fullName}'s alumni memory summary`}
                   </p>
                 </div>
@@ -199,7 +199,7 @@ export default function AlumniProfilePage() {
                   <div className="bg-secondary/20 rounded-lg p-8 text-center border border-border/50">
                     <p className="text-muted-foreground">
                       {isOwnProfile
-                        ? 'No approved memory yet. Write your memories and wait for admin approval.'
+                        ? 'No memory yet. Write your memories.'
                         : 'No memory shared yet.'}
                     </p>
                     {isOwnProfile && (

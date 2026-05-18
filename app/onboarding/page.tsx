@@ -1,44 +1,33 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/auth.store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/use-toast'
+import { ProtectedRoute } from '@/lib/protected-route'
 
 interface SocialProfile {
-  platform: 'LINKEDIN' | 'INSTAGRAM' | 'GITHUB' | 'TWITTER' | 'PORTFOLIO'
+  platform: 'LINKEDIN' | 'INSTAGRAM' | 'GITHUB' | 'TWITTER'
   profileUrl: string
 }
 
-const SOCIAL_PLATFORMS = [
-  { id: 'LINKEDIN', label: 'LinkedIn', placeholder: 'https://linkedin.com/in/yourprofile', required: true },
-  { id: 'INSTAGRAM', label: 'Instagram', placeholder: 'https://instagram.com/yourprofile', required: false },
-  { id: 'GITHUB', label: 'GitHub', placeholder: 'https://github.com/yourprofile', required: false },
-  { id: 'TWITTER', label: 'Twitter', placeholder: 'https://twitter.com/yourprofile', required: false },
-  { id: 'PORTFOLIO', label: 'Portfolio', placeholder: 'https://yourportfolio.com', required: false },
-] as const
-
-export default function OnboardingPage() {
+function OnboardingForm() {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const { user } = useAuthStore()
   const { toast } = useToast()
-
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const searchParams = useSearchParams()
   const [onboardingToken, setOnboardingToken] = useState<string | null>(null)
-
-  // Editable fields
-  const [nickname, setNickname] = useState('')
-  const [bio, setBio] = useState('')
-  const [socialProfiles, setSocialProfiles] = useState<Record<string, string>>({
-    LINKEDIN: '',
-    INSTAGRAM: '',
-    GITHUB: '',
-    TWITTER: '',
-    PORTFOLIO: '',
-  })
+  const [fullName, setFullName] = useState(user?.fullName || '')
+  const [nickname, setNickname] = useState(user?.nickname || '')
+  const [bio, setBio] = useState(user?.bio || '')
+  const [linkedin, setLinkedin] = useState('')
+  const [instagram, setInstagram] = useState('')
+  const [github, setGithub] = useState('')
+  const [twitter, setTwitter] = useState('')
 
   // Extract token from URL on mount
   useEffect(() => {
@@ -55,53 +44,41 @@ export default function OnboardingPage() {
     setOnboardingToken(token)
   }, [searchParams, toast, router])
 
-  const handleSocialProfileChange = (platform: string, value: string) => {
-    setSocialProfiles((prev) => ({
-      ...prev,
-      [platform]: value,
-    }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!onboardingToken) return
-
-    setIsSubmitting(true)
+    setIsLoading(true)
 
     try {
-      // Validate required LinkedIn
-      if (!socialProfiles.LINKEDIN.trim()) {
-        toast({
-          title: 'Error',
-          description: 'LinkedIn profile is required',
-          variant: 'destructive',
-        })
-        setIsSubmitting(false)
+      if (!fullName.trim()) {
+        toast({ title: 'Error', description: 'Full name is required', variant: 'destructive' })
+        setIsLoading(false)
         return
       }
 
-      // Build social profiles array
-      const profiles: SocialProfile[] = []
-      SOCIAL_PLATFORMS.forEach(({ id }) => {
-        if (socialProfiles[id]?.trim()) {
-          profiles.push({
-            platform: id as SocialProfile['platform'],
-            profileUrl: socialProfiles[id].trim(),
-          })
-        }
-      })
+      if (!linkedin.trim()) {
+        toast({ title: 'Error', description: 'LinkedIn profile is required', variant: 'destructive' })
+        setIsLoading(false)
+        return
+      }
 
-      // Submit with onboarding token in header (takes precedence over stored browser token)
+      const socialProfiles: SocialProfile[] = [
+        { platform: 'LINKEDIN', profileUrl: linkedin.trim() },
+      ]
+
+      if (instagram.trim()) socialProfiles.push({ platform: 'INSTAGRAM', profileUrl: instagram.trim() })
+      if (github.trim()) socialProfiles.push({ platform: 'GITHUB', profileUrl: github.trim() })
+      if (twitter.trim()) socialProfiles.push({ platform: 'TWITTER', profileUrl: twitter.trim() })
+
       const response = await fetch('/api/auth/complete-profile', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${onboardingToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          onboardingToken,
+          fullName: fullName.trim(),
           nickname: nickname.trim() || undefined,
           bio: bio.trim() || undefined,
-          socialProfiles: profiles,
+          socialProfiles,
         }),
       })
 
@@ -110,10 +87,11 @@ export default function OnboardingPage() {
         throw new Error(data.error || 'Failed to complete profile')
       }
 
-      toast({
-        title: 'Success',
-        description: 'Welcome to Surabhi Alumni Memory Book!',
-      })
+      // Refresh auth store with updated user data
+      const { hydrate } = useAuthStore.getState()
+      await hydrate()
+
+      toast({ title: 'Success', description: 'Profile completed successfully' })
       router.push('/dashboard')
     } catch (error) {
       toast({
@@ -122,110 +100,141 @@ export default function OnboardingPage() {
         variant: 'destructive',
       })
     } finally {
-      setIsSubmitting(false)
+      setIsLoading(false)
     }
   }
 
-  if (!onboardingToken) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
+  return (
+    <form onSubmit={handleSubmit} className="bg-card border border-border rounded-lg p-8 space-y-6">
+
+      {/* Full Name */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">Full Name *</label>
+        <Input
+          type="text"
+          placeholder="Your full name"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          disabled={isLoading}
+        />
+        <p className="text-xs text-muted-foreground mt-1">This is how your peers will see you</p>
+      </div>
+
+      {/* Nickname */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">Nickname (Optional)</label>
+        <Input
+          type="text"
+          placeholder="e.g., Salil, SM, etc."
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          disabled={isLoading}
+        />
+      </div>
+
+      {/* Bio */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">Bio (Optional)</label>
+        <Textarea
+          placeholder="Tell us about yourself..."
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          disabled={isLoading}
+          className="resize-none h-24"
+        />
+        <p className="text-xs text-muted-foreground mt-1">Share a bit about yourself (max 500 characters)</p>
+      </div>
+
+      {/* Social Profiles */}
+      <div className="border-t border-border pt-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Social Profiles</h3>
+        <p className="text-sm text-muted-foreground mb-6">Connect your social profiles to help peers find you</p>
+
+        {/* LinkedIn */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-foreground mb-2">LinkedIn Profile URL *</label>
+          <Input
+            type="url"
+            placeholder="https://linkedin.com/in/yourprofile"
+            value={linkedin}
+            onChange={(e) => setLinkedin(e.target.value)}
+            disabled={isLoading}
+          />
+          <p className="text-xs text-muted-foreground mt-1">Required - Must contain linkedin.com/in/</p>
+        </div>
+
+        {/* Instagram */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-foreground mb-2">Instagram (Optional)</label>
+          <Input
+            type="url"
+            placeholder="https://instagram.com/yourprofile"
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            disabled={isLoading}
+          />
+        </div>
+
+        {/* GitHub */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-foreground mb-2">GitHub (Optional)</label>
+          <Input
+            type="url"
+            placeholder="https://github.com/yourprofile"
+            value={github}
+            onChange={(e) => setGithub(e.target.value)}
+            disabled={isLoading}
+          />
+        </div>
+
+        {/* Twitter/Portfolio */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-foreground mb-2">Twitter / Portfolio (Optional)</label>
+          <Input
+            type="url"
+            placeholder="https://twitter.com/yourprofile or portfolio link"
+            value={twitter}
+            onChange={(e) => setTwitter(e.target.value)}
+            disabled={isLoading}
+          />
         </div>
       </div>
-    )
-  }
 
+      {/* Submit Button */}
+      <div className="border-t border-border pt-6">
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+        >
+          {isLoading ? 'Completing Profile...' : 'Complete Profile & Continue'}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+export default function OnboardingPage() {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="max-w-2xl mx-auto px-4 py-6">
-          <h1 className="text-2xl font-bold text-foreground">Welcome to Surabhi Alumni</h1>
-          <p className="text-sm text-muted-foreground mt-1">Complete your profile to get started</p>
-        </div>
-      </header>
+    <ProtectedRoute>
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-card">
+          <div className="max-w-2xl mx-auto px-4 py-4">
+            <h1 className="text-2xl font-bold text-foreground">Complete Your Profile</h1>
+            <p className="text-sm text-muted-foreground mt-1">Welcome to Surabhi Alumni Memory Book</p>
+          </div>
+        </header>
 
-      {/* Main Content */}
-      <main className="max-w-2xl mx-auto px-4 py-8">
-        <form onSubmit={handleSubmit} className="bg-card border border-border rounded-lg p-8 space-y-8">
-          
-          {/* Optional Information Section */}
-          <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4">Additional Information</h3>
-            <p className="text-sm text-muted-foreground mb-4">Help us get to know you better</p>
-
-            <div className="space-y-4">
-              {/* Nickname */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Nickname (Optional)</label>
-                <Input
-                  type="text"
-                  placeholder="e.g., Alex, AJ, Salil"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  disabled={isSubmitting}
-                  maxLength={50}
-                />
-                <p className="text-xs text-muted-foreground mt-1">How your batchmates can call you</p>
-              </div>
-
-              {/* Bio */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Bio (Optional)</label>
-                <Textarea
-                  placeholder="Share a bit about yourself, your interests, or career goals..."
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  disabled={isSubmitting}
-                  className="resize-none h-20"
-                  maxLength={500}
-                />
-                <p className="text-xs text-muted-foreground mt-1">{bio.length}/500 characters</p>
-              </div>
+        <main className="max-w-2xl mx-auto px-4 py-8">
+          <Suspense fallback={
+            <div className="bg-card border border-border rounded-lg p-8 text-center text-muted-foreground">
+              Loading...
             </div>
-          </div>
-
-          {/* Social Profiles Section */}
-          <div className="border-t border-border pt-8">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Connect Your Profiles</h3>
-            <p className="text-sm text-muted-foreground mb-6">Help peers find you on social platforms</p>
-
-            <div className="space-y-4">
-              {SOCIAL_PLATFORMS.map(({ id, label, placeholder, required }) => (
-                <div key={id}>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    {label}
-                    {required ? ' *' : ' (Optional)'}
-                  </label>
-                  <Input
-                    type="url"
-                    placeholder={placeholder}
-                    value={socialProfiles[id] || ''}
-                    onChange={(e) => handleSocialProfileChange(id, e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div className="border-t border-border pt-8">
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11"
-            >
-              {isSubmitting ? 'Completing Profile...' : 'Complete Profile & Continue'}
-            </Button>
-            <p className="text-xs text-muted-foreground text-center mt-4">
-              By completing your profile, you agree to share this information with your batchmates
-            </p>
-          </div>
-        </form>
-      </main>
-    </div>
+          }>
+            <OnboardingForm />
+          </Suspense>
+        </main>
+      </div>
+    </ProtectedRoute>
   )
 }

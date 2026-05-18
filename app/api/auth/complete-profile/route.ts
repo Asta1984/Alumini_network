@@ -15,49 +15,80 @@ interface SocialProfileInput {
 
 export async function POST(request: NextRequest) {
   try {
-    let token: string | null = null
-
-    // 1. Check for onboarding token in Authorization header (takes precedence)
-    const authHeader = request.headers.get('authorization')
-    if (authHeader?.startsWith('Bearer ')) {
-      token = authHeader.slice(7) // Remove 'Bearer ' prefix
-    }
-
-    // 2. Fallback to cookie token if no header token
-    if (!token) {
-      const cookieHeader = request.headers.get('cookie')
-      token = extractTokenFromCookie(cookieHeader)
-    }
-
-    if (!token) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
-
-    const decoded = verifyToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 })
-    }
+    const body = await request.json()
 
     const {
+      onboardingToken,
       fullName,
       nickname,
       bio,
       profilePictureUrl,
-      socialProfiles, // array of { platform, profileUrl }
+      socialProfiles,
     }: {
+      onboardingToken?: string
       fullName: string
       nickname?: string
       bio?: string
       profilePictureUrl?: string
       socialProfiles: SocialProfileInput[]
-    } = await request.json()
+    } = body
+
+    // ── Resolve user identity ─────────────────────────────────────────────
+    // Onboarding token (from URL) takes precedence over any stored session —
+    // this ensures correct identity on shared devices.
+    let userId: string
+
+    if (onboardingToken) {
+      const onboardingLink = await prisma.onboardingLink.findUnique({
+        where: { token: onboardingToken },
+      })
+
+      if (!onboardingLink) {
+        return NextResponse.json(
+          { error: 'Invalid or expired onboarding link' },
+          { status: 401 }
+        )
+      }
+
+      // Prevent replay after successful submission
+      if (onboardingLink.usedAt) {
+        return NextResponse.json(
+          { error: 'This onboarding link has already been used' },
+          { status: 410 }
+        )
+      }
+
+      userId = onboardingLink.userId
+    } else {
+      // Fallback: Bearer header → cookie (for any non-onboarding callers)
+      let token: string | null = null
+
+      const authHeader = request.headers.get('authorization')
+      if (authHeader?.startsWith('Bearer ')) {
+        token = authHeader.slice(7)
+      }
+
+      if (!token) {
+        token = extractTokenFromCookie(request.headers.get('cookie'))
+      }
+
+      if (!token) {
+        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      }
+
+      const decoded = verifyToken(token)
+      if (!decoded) {
+        return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 })
+      }
+
+      userId = decoded.userId
+    }
 
     // ── Validation ────────────────────────────────────────────────────────
     if (!fullName?.trim()) {
       return NextResponse.json({ error: 'Full name is required' }, { status: 400 })
     }
 
-    // LinkedIn is mandatory
     const linkedIn = socialProfiles?.find(
       (p) => p.platform === SocialPlatform.LINKEDIN
     )
@@ -76,7 +107,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate optional URLs are valid format
     for (const profile of socialProfiles) {
       try {
         new URL(profile.profileUrl)
@@ -90,9 +120,8 @@ export async function POST(request: NextRequest) {
 
     // ── Update user profile ───────────────────────────────────────────────
     const updatedUser = await prisma.$transaction(async (tx) => {
-      // Update user core fields
       const user = await tx.user.update({
-        where: { id: decoded.userId },
+        where: { id: userId },
         data: {
           fullName: fullName.trim(),
           nickname: nickname?.trim() || null,
@@ -102,21 +131,27 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Deactivate all existing active social profiles
       await tx.socialProfile.updateMany({
-        where: { userId: decoded.userId, isActive: true },
+        where: { userId, isActive: true },
         data: { isActive: false },
       })
 
-      // Insert new active social profiles
       await tx.socialProfile.createMany({
         data: socialProfiles.map((p) => ({
-          userId: decoded.userId,
+          userId,
           platform: p.platform,
           profileUrl: p.profileUrl,
           isActive: true,
         })),
       })
+
+      // Mark onboarding link as used inside the same transaction
+      if (onboardingToken) {
+        await tx.onboardingLink.update({
+          where: { token: onboardingToken },
+          data: { usedAt: new Date() },
+        })
+      }
 
       return user
     })
@@ -154,7 +189,6 @@ export async function PATCH(request: NextRequest) {
     const { socialProfiles }: { socialProfiles: SocialProfileInput[] } =
       await request.json()
 
-    // LinkedIn still mandatory
     const linkedIn = socialProfiles?.find(
       (p) => p.platform === SocialPlatform.LINKEDIN
     )
@@ -167,13 +201,11 @@ export async function PATCH(request: NextRequest) {
     }
 
     await prisma.$transaction(async (tx) => {
-      // Mark existing active profiles as inactive (preserves history)
       await tx.socialProfile.updateMany({
         where: { userId: decoded.userId, isActive: true },
         data: { isActive: false },
       })
 
-      // Create new active profiles
       await tx.socialProfile.createMany({
         data: socialProfiles.map((p) => ({
           userId: decoded.userId,

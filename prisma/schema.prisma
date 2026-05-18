@@ -246,3 +246,4 @@ model AlumniShowcase {
 
   @@map("alumni_showcase")
 }
+

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { BookOpen, Settings } from 'lucide-react'
+import Image from 'next/image'
 
 export default function LandingPage() {
   return (
@@ -12,10 +12,8 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <BookOpen className="w-8 h-8 text-primary" />
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Surabhi</h1>
-                <p className="text-sm text-muted-foreground">Alumni Memory Book</p>
+                <Image src="/icon.png" alt="Surabhi Icon" width={150} height={100} className='bg-amber-50 p-3 border-t-4 rounded-2xl' />
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -46,7 +44,7 @@ export default function LandingPage() {
           {/* Student Portal Card */}
           <div className="group rounded-lg border border-border bg-card p-8 hover:border-primary hover:shadow-lg transition-all duration-300">
             <div className="flex items-center gap-3 mb-4">
-              <BookOpen className="w-6 h-6 text-primary" />
+              {/* <BookOpen className="w-6 h-6 text-primary" /> */}
               <h3 className="text-2xl font-semibold text-foreground">Alumni Portal</h3>
             </div>
             <p className="text-muted-foreground mb-6">
@@ -54,15 +52,15 @@ export default function LandingPage() {
             </p>
             <ul className="space-y-2 mb-8 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">→</span>
-                <span>Write and share your memories</span>
+                <span className="text-primary mt-1"></span>
+                <span>Share your sweet memories</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">→</span>
-                <span>View AI-generated summaries</span>
+                <span className="text-primary mt-1"></span>
+                <span></span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">→</span>
+                <span className="text-primary mt-1"></span>
                 <span>Connect with your batch</span>
               </li>
             </ul>
@@ -76,23 +74,23 @@ export default function LandingPage() {
           {/* Admin Portal Card */}
           <div className="group rounded-lg border border-border bg-card p-8 hover:border-primary hover:shadow-lg transition-all duration-300">
             <div className="flex items-center gap-3 mb-4">
-              <Settings className="w-6 h-6 text-primary" />
+              {/* <Settings className="w-6 h-6 text-primary" /> */}
               <h3 className="text-2xl font-semibold text-foreground">Admin Panel</h3>
             </div>
             <p className="text-muted-foreground mb-6">
-              Manage the platform, moderate submissions, and ensure quality of the memory book experience.
+              Manage the platform
             </p>
             <ul className="space-y-2 mb-8 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">→</span>
-                <span>Manage student profiles</span>
+                <span className="text-primary mt-1"></span>
+                <span>Manage the platform</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">→</span>
+                <span className="text-primary mt-1"></span>
                 <span>Review submissions</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">→</span>
+                <span className="text-primary mt-1"></span>
                 <span>Generate onboarding links</span>
               </li>
             </ul>

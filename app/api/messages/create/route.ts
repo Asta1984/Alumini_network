@@ -59,8 +59,8 @@ export async function POST(request: NextRequest) {
 
     // ── Rule 3: Character count (400–600) ─────────────────────────────
     const limits = await prisma.messageLimit.findFirst()
-    const minChars = limits?.minCharacters ?? 400
-    const maxChars = limits?.maxCharacters ?? 600
+    const minChars = limits?.minCharacters ?? 4
+    const maxChars = limits?.maxCharacters ?? 60
     const charCount = messageText.trim().length
 
     if (charCount < minChars) {

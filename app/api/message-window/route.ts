@@ -20,8 +20,8 @@ export async function GET() {
       isActive: window?.isActive ?? false,
       startDate: window?.startDate?.toISOString() ?? null,
       endDate: window?.endDate?.toISOString() ?? null,
-      minCharacters: limits?.minCharacters ?? 400,
-      maxCharacters: limits?.maxCharacters ?? 600,
+      minCharacters: limits?.minCharacters ?? 4,
+      maxCharacters: limits?.maxCharacters ?? 60,
       maxPerUser: limits?.maxPerUser ?? 100,
     })
   } catch (error) {
@@ -31,8 +31,8 @@ export async function GET() {
         isActive: false,
         startDate: null,
         endDate: null,
-        minCharacters: 400,
-        maxCharacters: 600,
+        minCharacters: 4,
+        maxCharacters: 60,
         maxPerUser: 100,
       },
       { status: 200 }

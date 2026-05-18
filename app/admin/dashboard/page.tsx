@@ -127,33 +127,59 @@ export default function AdminDashboard() {
   }
 
   // ── CSV Parsing ────────────────────────────────────────────────────────────
-  const parseCSV = (text: string) => {
-    const lines = text.trim().split('\n')
-    if (lines.length < 2) { setCsvError('CSV must have a header row and at least one data row'); return }
+const parseCSV = (text: string) => {
+  const lines = text
+    .replace(/^\uFEFF/, '')      // strip Excel BOM
+    .trim()
+    .split('\n')
+    .map(l => l.replace(/\r$/, ''))  // strip \r from Windows line endings
 
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'))
-    const required = ['full_name', 'enrollment_number', 'email', 'mobile']
-    const missing = required.filter(r => !headers.includes(r))
-
-    if (missing.length > 0) {
-      setCsvError(`Missing columns: ${missing.join(', ')}. Required: full_name, enrollment_number, email, mobile`)
-      return
-    }
-
-    const rows = lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''))
-      return Object.fromEntries(headers.map((h, i) => [h, values[i] || '']))
-    }).filter(r => r.enrollment_number)
-
-    setCsvData(rows.map(r => ({
-      fullName: r.full_name,
-      enrollmentNumber: r.enrollment_number,
-      email: r.email,
-      mobile: r.mobile,
-    })))
-    setCsvError('')
+  if (lines.length < 2) {
+    setCsvError('CSV must have a header row and at least one data row')
+    return
   }
 
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'))
+  const required = ['full_name', 'enrollment_number', 'email', 'mobile']
+  const missing = required.filter(r => !headers.includes(r))
+
+  if (missing.length > 0) {
+    setCsvError(`Missing columns: ${missing.join(', ')}. Required: full_name, enrollment_number, email, mobile`)
+    return
+  }
+
+  const rows = lines.slice(1)
+    .map(line => {
+      // handle quoted fields containing commas
+      const values: string[] = []
+      let current = ''
+      let inQuotes = false
+      for (const char of line) {
+        if (char === '"') { inQuotes = !inQuotes }
+        else if (char === ',' && !inQuotes) { values.push(current.trim()); current = '' }
+        else { current += char }
+      }
+      values.push(current.trim())
+
+      if (values.length !== headers.length) return null  // skip malformed rows
+
+      return Object.fromEntries(headers.map((h, i) => [h, values[i] || '']))
+    })
+    .filter((r): r is Record<string, string> => r !== null && !!r.enrollment_number)
+
+  if (rows.length === 0) {
+    setCsvError('No valid rows found after parsing')
+    return
+  }
+
+  setCsvData(rows.map(r => ({
+    fullName: r.full_name,
+    enrollmentNumber: r.enrollment_number,
+    email: r.email,
+    mobile: r.mobile,
+  })))
+  setCsvError('')
+}
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -228,7 +254,7 @@ export default function AdminDashboard() {
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
               }`}
             >
-              {t === 'students' ? '👥 Students' : t === 'users' ? '🏷️ Alumni Tags' : t === 'messages' ? '💬 Messages' : t === 'summaries' ? '📝 Summaries' : t === 'settings' ? '⚙️ Settings' : '📤 Import CSV'}
+              {t === 'students' ? ' Students' : t === 'users' ? ' Alumni Tags' : t === 'messages' ? 'Messages' : t === 'summaries' ? 'Summaries' : t === 'settings' ? ' Settings' : 'Import CSV'}
             </button>
           ))}
         </nav>
@@ -263,7 +289,7 @@ export default function AdminDashboard() {
                   disabled={bulkLinkLoading}
                   className="bg-violet-600 hover:bg-violet-500 text-white text-sm"
                 >
-                  {bulkLinkLoading ? 'Generating...' : '🔗 Generate All Links'}
+                  {bulkLinkLoading ? 'Generating...' : 'Generate All Links'}
                 </Button>
               </div>
             </div>
@@ -358,7 +384,7 @@ export default function AdminDashboard() {
                                 onClick={() => copyLink(student.id, generatedLinks[student.id])}
                                 className="text-xs text-emerald-400 hover:text-emerald-300 transition font-medium"
                               >
-                                {copiedId === student.id ? '✓ Copied!' : '📋 Copy Link'}
+                                {copiedId === student.id ? '✓ Copied!' : ' Copy Link'}
                               </button>
                             ) : (
                               <button
@@ -366,7 +392,7 @@ export default function AdminDashboard() {
                                 disabled={linkLoading === student.id}
                                 className="text-xs text-violet-400 hover:text-violet-300 transition disabled:opacity-50"
                               >
-                                {linkLoading === student.id ? 'Generating...' : student.hasOnboardingLink ? '🔄 Regenerate' : '🔗 Generate Link'}
+                                {linkLoading === student.id ? 'Generating...' : student.hasOnboardingLink ? ' Regenerate' : ' Generate Link'}
                               </button>
                             )}
                           </div>
@@ -492,7 +518,7 @@ export default function AdminDashboard() {
 
             {importResult && (
               <div className="mb-4 px-4 py-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
-                ✅ {importResult}
+                {importResult}
               </div>
             )}
 

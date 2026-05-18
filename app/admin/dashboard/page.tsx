@@ -36,6 +36,8 @@ type Tab = 'students' | 'users' | 'messages' | 'summaries' | 'settings' | 'impor
 export default function AdminDashboard() {
   const router = useRouter()
   const { admin, hydrate, isAuthenticated, isLoading, logout } = useAdminStore()
+  const sidebarRef = useRef<HTMLDivElement>(null)
+  const [sidebarWidth, setSidebarWidth] = useState(240) // Default to 15rem = 240px
 
   const [tab, setTab] = useState<Tab>('students')
   const [students, setStudents] = useState<Student[]>([])
@@ -64,6 +66,19 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (isAuthenticated) fetchStudents(1, search)
   }, [isAuthenticated])
+
+  // Track sidebar width changes
+  useEffect(() => {
+    const sidebar = document.querySelector('.sidebar') as HTMLElement
+    if (!sidebar) return
+
+    const resizeObserver = new ResizeObserver(() => {
+      setSidebarWidth(sidebar.offsetWidth)
+    })
+    resizeObserver.observe(sidebar)
+
+    return () => resizeObserver.disconnect()
+  }, [])
 
   const fetchStudents = async (page = 1, q = '') => {
     setStudentsLoading(true)
@@ -240,7 +255,7 @@ const parseCSV = (text: string) => {
       <AdminSidebar activeTab={tab} onTabChange={setTab} />
 
       {/* Main */}
-      <div className="ml-[15rem] p-8">
+      <div className="p-8" style={{ marginLeft: `${sidebarWidth}px`, transition: 'margin-left 0.2s ease-out' }}>
 
         {/* ── Students Tab ──────────────────────────────────────────────────── */}
         {tab === 'students' && (

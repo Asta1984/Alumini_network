@@ -254,7 +254,7 @@ const parseCSV = (text: string) => {
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
               }`}
             >
-              {t === 'students' ? '👥 Students' : t === 'users' ? '🏷️ Alumni Tags' : t === 'messages' ? '💬 Messages' : t === 'summaries' ? '📝 Summaries' : t === 'settings' ? '⚙️ Settings' : '📤 Import CSV'}
+              {t === 'students' ? ' Students' : t === 'users' ? ' Alumni Tags' : t === 'messages' ? 'Messages' : t === 'summaries' ? 'Summaries' : t === 'settings' ? ' Settings' : 'Import CSV'}
             </button>
           ))}
         </nav>
@@ -289,7 +289,7 @@ const parseCSV = (text: string) => {
                   disabled={bulkLinkLoading}
                   className="bg-violet-600 hover:bg-violet-500 text-white text-sm"
                 >
-                  {bulkLinkLoading ? 'Generating...' : '🔗 Generate All Links'}
+                  {bulkLinkLoading ? 'Generating...' : 'Generate All Links'}
                 </Button>
               </div>
             </div>
@@ -384,7 +384,7 @@ const parseCSV = (text: string) => {
                                 onClick={() => copyLink(student.id, generatedLinks[student.id])}
                                 className="text-xs text-emerald-400 hover:text-emerald-300 transition font-medium"
                               >
-                                {copiedId === student.id ? '✓ Copied!' : '📋 Copy Link'}
+                                {copiedId === student.id ? '✓ Copied!' : ' Copy Link'}
                               </button>
                             ) : (
                               <button
@@ -392,7 +392,7 @@ const parseCSV = (text: string) => {
                                 disabled={linkLoading === student.id}
                                 className="text-xs text-violet-400 hover:text-violet-300 transition disabled:opacity-50"
                               >
-                                {linkLoading === student.id ? 'Generating...' : student.hasOnboardingLink ? '🔄 Regenerate' : '🔗 Generate Link'}
+                                {linkLoading === student.id ? 'Generating...' : student.hasOnboardingLink ? ' Regenerate' : ' Generate Link'}
                               </button>
                             )}
                           </div>

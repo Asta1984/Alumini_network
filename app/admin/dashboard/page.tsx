@@ -10,6 +10,7 @@ import { MessagesTab } from '@/components/admin/messages-tab'
 import { SummariesTab } from '@/components/admin/summaries-tab'
 import { SettingsTab } from '@/components/admin/settings-tab'
 import { UsersTab } from '@/components/admin/user-tab'
+import { AdminSidebar } from '@/components/admin/sidebar'
 
 interface Student {
   id: string
@@ -236,41 +237,10 @@ const parseCSV = (text: string) => {
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
       {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-56 bg-zinc-900 border-r border-zinc-800 flex flex-col">
-        <div className="p-4 border-b border-zinc-800">
-          <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Surabhi Admin</p>
-          <p className="font-semibold text-white truncate">{admin?.name}</p>
-          <p className="text-xs text-zinc-500 truncate">{admin?.email}</p>
-        </div>
-
-        <nav className="flex-1 p-3 space-y-1">
-          {(['students', 'users', 'messages', 'summaries', 'settings', 'import'] as Tab[]).map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition capitalize ${
-                tab === t
-                  ? 'bg-violet-600 text-white'
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-              }`}
-            >
-              {t === 'students' ? ' Students' : t === 'users' ? ' Alumni Tags' : t === 'messages' ? 'Messages' : t === 'summaries' ? 'Summaries' : t === 'settings' ? ' Settings' : 'Import CSV'}
-            </button>
-          ))}
-        </nav>
-
-        <div className="p-3 border-t border-zinc-800">
-          <button
-            onClick={async () => { await logout(); router.push('/admin/login') }}
-            className="w-full text-left px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
+      <AdminSidebar activeTab={tab} onTabChange={setTab} />
 
       {/* Main */}
-      <div className="ml-56 p-8">
+      <div className="ml-[15rem] p-8">
 
         {/* ── Students Tab ──────────────────────────────────────────────────── */}
         {tab === 'students' && (

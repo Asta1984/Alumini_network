@@ -12,6 +12,7 @@ import {
   Users,
   FileUp,
   ChevronsUpDown,
+  StickyNoteIcon
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,7 @@ type Tab = 'students' | 'users' | 'messages' | 'summaries' | 'settings' | 'impor
 interface AdminSidebarProps {
   activeTab: Tab
   onTabChange: (tab: Tab) => void
+  onCollapse?: (collapsed: boolean) => void // ← new: notifies parent of collapse state
 }
 
 const sidebarVariants = {
@@ -67,8 +69,9 @@ const variants = {
 
 const transitionProps = {
   type: 'tween' as const,
-  ease: 'easeOut',
+  ease: 'easeOut' as const,
   duration: 0.2,
+  staggerChildren: 0.1,
 }
 
 const staggerVariants = {
@@ -78,13 +81,13 @@ const staggerVariants = {
 }
 
 const menuItems: Array<{ label: string; tab: Tab; icon: React.ReactNode }> = [
-  { label: 'Students', tab: 'students', icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: 'Alumni Tags', tab: 'users', icon: <Users className="h-4 w-4" /> },
+  { label: 'Students', tab: 'students', icon: <Users className="h-4 w-4" /> },
+  { label: 'Alumni Tags', tab: 'users', icon: <LayoutDashboard className="h-4 w-4" /> },
   { label: 'Messages', tab: 'messages', icon: <MessageSquare className="h-4 w-4" /> },
-  { label: 'Summaries', tab: 'summaries', icon: <FileUp className="h-4 w-4" /> },
+  { label: 'Summaries', tab: 'summaries', icon: <StickyNoteIcon className="h-4 w-4" /> },
 ]
 
-export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
+export function AdminSidebar({ activeTab, onTabChange, onCollapse }: AdminSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(true)
   const { admin, logout } = useAdminStore()
   const router = useRouter()
@@ -94,6 +97,17 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
     router.push('/admin/login')
   }
 
+  // ← new: single toggle handler that also notifies parent
+  const handleMouseEnter = () => {
+    setIsCollapsed(false)
+    onCollapse?.(false)
+  }
+
+  const handleMouseLeave = () => {
+    setIsCollapsed(true)
+    onCollapse?.(true)
+  }
+
   return (
     <motion.div
       className={cn('sidebar fixed left-0 z-40 h-full shrink-0 border-r border-zinc-800')}
@@ -101,8 +115,8 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
       animate={isCollapsed ? 'closed' : 'open'}
       variants={sidebarVariants}
       transition={transitionProps}
-      onMouseEnter={() => setIsCollapsed(false)}
-      onMouseLeave={() => setIsCollapsed(true)}
+      onMouseEnter={handleMouseEnter}  // ← replaced inline setIsCollapsed
+      onMouseLeave={handleMouseLeave}  // ← replaced inline setIsCollapsed
     >
       <motion.div
         className="relative z-40 flex h-full shrink-0 flex-col bg-zinc-900 text-zinc-300 transition-all"
@@ -111,13 +125,13 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
         <motion.ul variants={staggerVariants} className="flex h-full flex-col">
           <div className="flex grow flex-col items-center">
             {/* Logo/Org Section */}
-            <div className="flex h-[54px] w-full shrink-0 border-b border-zinc-800 p-2">
+            <div className="flex h-13.5 w-full shrink-0 border-b border-zinc-800 p-2">
               <div className="mt-[1.5px] flex w-full">
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger className="w-full" asChild>
                     <Button variant="ghost" size="sm" className="flex w-fit items-center gap-2 px-2">
                       <Avatar className="size-4 rounded">
-                        <AvatarFallback>SA</AvatarFallback>
+                        <AvatarFallback>A</AvatarFallback>
                       </Avatar>
                       <motion.li variants={variants} className="flex w-fit items-center gap-2">
                         {!isCollapsed && (
@@ -131,13 +145,12 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
                     <DropdownMenuItem className="flex items-center gap-2">
-                      <UserCog className="h-4 w-4" /> Settings
-                    </DropdownMenuItem>
+                      <UserCog className="h-4 w-4" /><button onClick={() => onTabChange('settings')}> Settings</button>
+                    </DropdownMenuItem> 
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             </div>
-
             {/* Navigation Items */}
             <div className="flex h-full w-full flex-col">
               <div className="flex grow flex-col gap-4">

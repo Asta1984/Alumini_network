@@ -12,6 +12,7 @@ import { SettingsTab } from '@/components/admin/settings-tab'
 import { UsersTab } from '@/components/admin/user-tab'
 import { AdminSidebar } from '@/components/admin/sidebar'
 import { useAsyncSearch } from '@/lib/hooks/useDebounce'
+import { motion } from 'framer-motion'
 
 interface Student {
   id: string
@@ -36,14 +37,13 @@ type Tab = 'students' | 'users' | 'messages' | 'summaries' | 'settings' | 'impor
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const { admin, hydrate, isAuthenticated, isLoading, logout } = useAdminStore()
-  const [sidebarWidth, setSidebarWidth] = useState(240) // Default to 15rem = 240px
+  const { hydrate, isAuthenticated, isLoading} = useAdminStore()
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true) // ← replaces sidebarWidth + polling useEffect
 
   const [tab, setTab] = useState<Tab>('students')
   const [students, setStudents] = useState<Student[]>([])
   const [pagination, setPagination] = useState<Pagination>({ page: 1, total: 0, pages: 1 })
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [linkLoading, setLinkLoading] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [generatedLinks, setGeneratedLinks] = useState<Record<string, string>>({})
@@ -79,19 +79,6 @@ export default function AdminDashboard() {
   }, [])
 
   const { results, isLoading: searchLoading } = useAsyncSearch(searchQuery, searchFn, 400)
-
-  // Track sidebar width changes with improved observer
-  useEffect(() => {
-    const checkSidebar = setInterval(() => {
-      const sidebar = document.querySelector('.sidebar') as HTMLElement
-      if (sidebar) {
-        const width = sidebar.offsetWidth
-        setSidebarWidth(width)
-      }
-    }, 50) // Check every 50ms during animation
-
-    return () => clearInterval(checkSidebar)
-  }, [])
 
   const fetchStudents = async (page = 1, q = '') => {
     try {
@@ -150,59 +137,59 @@ export default function AdminDashboard() {
   }
 
   // ── CSV Parsing ────────────────────────────────────────────────────────────
-const parseCSV = (text: string) => {
-  const lines = text
-    .replace(/^\uFEFF/, '')      // strip Excel BOM
-    .trim()
-    .split('\n')
-    .map(l => l.replace(/\r$/, ''))  // strip \r from Windows line endings
+  const parseCSV = (text: string) => {
+    const lines = text
+      .replace(/^\uFEFF/, '')
+      .trim()
+      .split('\n')
+      .map(l => l.replace(/\r$/, ''))
 
-  if (lines.length < 2) {
-    setCsvError('CSV must have a header row and at least one data row')
-    return
+    if (lines.length < 2) {
+      setCsvError('CSV must have a header row and at least one data row')
+      return
+    }
+
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'))
+    const required = ['full_name', 'enrollment_number', 'email', 'mobile']
+    const missing = required.filter(r => !headers.includes(r))
+
+    if (missing.length > 0) {
+      setCsvError(`Missing columns: ${missing.join(', ')}. Required: full_name, enrollment_number, email, mobile`)
+      return
+    }
+
+    const rows = lines.slice(1)
+      .map(line => {
+        const values: string[] = []
+        let current = ''
+        let inQuotes = false
+        for (const char of line) {
+          if (char === '"') { inQuotes = !inQuotes }
+          else if (char === ',' && !inQuotes) { values.push(current.trim()); current = '' }
+          else { current += char }
+        }
+        values.push(current.trim())
+
+        if (values.length !== headers.length) return null
+
+        return Object.fromEntries(headers.map((h, i) => [h, values[i] || '']))
+      })
+      .filter((r): r is Record<string, string> => r !== null && !!r.enrollment_number)
+
+    if (rows.length === 0) {
+      setCsvError('No valid rows found after parsing')
+      return
+    }
+
+    setCsvData(rows.map(r => ({
+      fullName: r.full_name,
+      enrollmentNumber: r.enrollment_number,
+      email: r.email,
+      mobile: r.mobile,
+    })))
+    setCsvError('')
   }
 
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'))
-  const required = ['full_name', 'enrollment_number', 'email', 'mobile']
-  const missing = required.filter(r => !headers.includes(r))
-
-  if (missing.length > 0) {
-    setCsvError(`Missing columns: ${missing.join(', ')}. Required: full_name, enrollment_number, email, mobile`)
-    return
-  }
-
-  const rows = lines.slice(1)
-    .map(line => {
-      // handle quoted fields containing commas
-      const values: string[] = []
-      let current = ''
-      let inQuotes = false
-      for (const char of line) {
-        if (char === '"') { inQuotes = !inQuotes }
-        else if (char === ',' && !inQuotes) { values.push(current.trim()); current = '' }
-        else { current += char }
-      }
-      values.push(current.trim())
-
-      if (values.length !== headers.length) return null  // skip malformed rows
-
-      return Object.fromEntries(headers.map((h, i) => [h, values[i] || '']))
-    })
-    .filter((r): r is Record<string, string> => r !== null && !!r.enrollment_number)
-
-  if (rows.length === 0) {
-    setCsvError('No valid rows found after parsing')
-    return
-  }
-
-  setCsvData(rows.map(r => ({
-    fullName: r.full_name,
-    enrollmentNumber: r.enrollment_number,
-    email: r.email,
-    mobile: r.mobile,
-  })))
-  setCsvError('')
-}
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -259,10 +246,14 @@ const parseCSV = (text: string) => {
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
       {/* Sidebar */}
-      <AdminSidebar activeTab={tab} onTabChange={setTab} />
+      <AdminSidebar activeTab={tab} onTabChange={setTab} onCollapse={setSidebarCollapsed} />
 
-      {/* Main */}
-      <div className="p-8" style={{ marginLeft: `${sidebarWidth}px`, transition: 'margin-left 0.2s ease-out' }}>
+      {/* Main — margin driven by framer-motion, in sync with sidebar transition */}
+      <motion.div
+        className="p-8"
+        animate={{ marginLeft: sidebarCollapsed ? '3.05rem' : '15rem' }}
+        transition={{ type: 'tween', ease: 'easeOut', duration: 0.2 }}
+      >
 
         {/* ── Students Tab ──────────────────────────────────────────────────── */}
         {tab === 'students' && (
@@ -556,8 +547,7 @@ const parseCSV = (text: string) => {
             </Button>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   )
 }
-

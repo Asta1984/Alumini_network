@@ -37,7 +37,6 @@ type Tab = 'students' | 'users' | 'messages' | 'summaries' | 'settings' | 'impor
 export default function AdminDashboard() {
   const router = useRouter()
   const { admin, hydrate, isAuthenticated, isLoading, logout } = useAdminStore()
-  const sidebarRef = useRef<HTMLDivElement>(null)
   const [sidebarWidth, setSidebarWidth] = useState(240) // Default to 15rem = 240px
 
   const [tab, setTab] = useState<Tab>('students')
@@ -81,17 +80,17 @@ export default function AdminDashboard() {
 
   const { results, isLoading: searchLoading } = useAsyncSearch(searchQuery, searchFn, 400)
 
-  // Track sidebar width changes
+  // Track sidebar width changes with improved observer
   useEffect(() => {
-    const sidebar = document.querySelector('.sidebar') as HTMLElement
-    if (!sidebar) return
+    const checkSidebar = setInterval(() => {
+      const sidebar = document.querySelector('.sidebar') as HTMLElement
+      if (sidebar) {
+        const width = sidebar.offsetWidth
+        setSidebarWidth(width)
+      }
+    }, 50) // Check every 50ms during animation
 
-    const resizeObserver = new ResizeObserver(() => {
-      setSidebarWidth(sidebar.offsetWidth)
-    })
-    resizeObserver.observe(sidebar)
-
-    return () => resizeObserver.disconnect()
+    return () => clearInterval(checkSidebar)
   }, [])
 
   const fetchStudents = async (page = 1, q = '') => {

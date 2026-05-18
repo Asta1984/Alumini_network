@@ -1,7 +1,7 @@
 // app/admin/dashboard/page.tsx
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAdminStore } from '@/store/admin.store'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,7 @@ import { SummariesTab } from '@/components/admin/summaries-tab'
 import { SettingsTab } from '@/components/admin/settings-tab'
 import { UsersTab } from '@/components/admin/user-tab'
 import { AdminSidebar } from '@/components/admin/sidebar'
+import { useAsyncSearch } from '@/lib/hooks/useDebounce'
 
 interface Student {
   id: string
@@ -42,8 +43,7 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState<Tab>('students')
   const [students, setStudents] = useState<Student[]>([])
   const [pagination, setPagination] = useState<Pagination>({ page: 1, total: 0, pages: 1 })
-  const [search, setSearch] = useState('')
-  const [studentsLoading, setStudentsLoading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [linkLoading, setLinkLoading] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
@@ -64,8 +64,22 @@ export default function AdminDashboard() {
   }, [isLoading, isAuthenticated, router])
 
   useEffect(() => {
-    if (isAuthenticated) fetchStudents(1, search)
+    if (isAuthenticated) fetchStudents(1, '')
   }, [isAuthenticated])
+
+  // Search function for useAsyncSearch
+  const searchFn = useCallback(async (query: string) => {
+    const params = new URLSearchParams({ page: '1' })
+    if (query) params.set('q', query)
+    const res = await fetch(`/api/admin/students?${params}`)
+    if (!res.ok) throw new Error('Search failed')
+    const data = await res.json()
+    setStudents(data.students)
+    setPagination(data.pagination)
+    return data.students
+  }, [])
+
+  const { results, isLoading: searchLoading } = useAsyncSearch(searchQuery, searchFn, 400)
 
   // Track sidebar width changes
   useEffect(() => {
@@ -81,7 +95,6 @@ export default function AdminDashboard() {
   }, [])
 
   const fetchStudents = async (page = 1, q = '') => {
-    setStudentsLoading(true)
     try {
       const params = new URLSearchParams({ page: String(page) })
       if (q) params.set('q', q)
@@ -91,14 +104,9 @@ export default function AdminDashboard() {
         setStudents(data.students)
         setPagination(data.pagination)
       }
-    } finally {
-      setStudentsLoading(false)
+    } catch (err) {
+      console.error('Failed to fetch students:', err)
     }
-  }
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    fetchStudents(1, search)
   }
 
   const generateLink = async (studentId: string) => {
@@ -112,7 +120,7 @@ export default function AdminDashboard() {
       const data = await res.json()
       if (res.ok) {
         setGeneratedLinks(prev => ({ ...prev, [studentId]: data.url }))
-        fetchStudents(pagination.page, search)
+        fetchStudents(pagination.page, searchQuery)
       }
     } finally {
       setLinkLoading(null)
@@ -130,7 +138,7 @@ export default function AdminDashboard() {
       })
       const data = await res.json()
       setBulkResult(data.message)
-      fetchStudents(pagination.page, search)
+      fetchStudents(pagination.page, searchQuery)
     } finally {
       setBulkLinkLoading(false)
     }
@@ -280,27 +288,25 @@ const parseCSV = (text: string) => {
             </div>
 
             {/* Search */}
-            <form onSubmit={handleSearch} className="flex gap-2 mb-6">
+            <div className="flex gap-2 mb-6 items-center">
               <Input
                 placeholder="Search by name, enrollment, or email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 max-w-sm"
               />
-              <Button type="submit" variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
-                Search
-              </Button>
-              {search && (
+              {searchLoading && <span className="text-xs text-zinc-500">Searching...</span>}
+              {searchQuery && (
                 <Button
                   type="button"
                   variant="ghost"
                   className="text-zinc-500 hover:text-white"
-                  onClick={() => { setSearch(''); fetchStudents(1, '') }}
+                  onClick={() => { setSearchQuery(''); fetchStudents(1, '') }}
                 >
                   Clear
                 </Button>
               )}
-            </form>
+            </div>
 
             {/* Stats bar */}
             <div className="grid grid-cols-4 gap-3 mb-6">
@@ -319,7 +325,7 @@ const parseCSV = (text: string) => {
 
             {/* Table */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-              {studentsLoading ? (
+              {searchLoading ? (
                 <div className="flex items-center justify-center py-16">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-violet-500" />
                 </div>
@@ -400,7 +406,7 @@ const parseCSV = (text: string) => {
                     variant="outline"
                     size="sm"
                     disabled={pagination.page <= 1}
-                    onClick={() => fetchStudents(pagination.page - 1, search)}
+                    onClick={() => fetchStudents(pagination.page - 1, searchQuery)}
                     className="border-zinc-700 text-zinc-400 hover:bg-zinc-800"
                   >
                     Previous
@@ -409,7 +415,7 @@ const parseCSV = (text: string) => {
                     variant="outline"
                     size="sm"
                     disabled={pagination.page >= pagination.pages}
-                    onClick={() => fetchStudents(pagination.page + 1, search)}
+                    onClick={() => fetchStudents(pagination.page + 1, searchQuery)}
                     className="border-zinc-700 text-zinc-400 hover:bg-zinc-800"
                   >
                     Next

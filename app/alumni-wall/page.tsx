@@ -119,6 +119,7 @@ export default function AlumniWallPage() {
                     name={alumnus.fullName}
                     nickname={alumnus.nickname}
                     bio={alumnus.bio}
+                    messages={alumnus.messages}
                     socialLinks={alumnus.socialProfiles}
                   />
                 ))}

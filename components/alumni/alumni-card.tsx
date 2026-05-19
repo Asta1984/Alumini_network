@@ -8,12 +8,18 @@ interface SocialLink {
   profileUrl: string
 }
 
+interface Message {
+  id: string
+  text: string
+}
+
 interface AlumniCardProps {
   avatarUrl: string | null
   name: string
   nickname?: string | null
   bio?: string | null
   socialLinks: SocialLink[]
+  messages?: Message[]
   profileUrl?: string
 }
 
@@ -25,7 +31,7 @@ const platformIconMap: Record<string, React.ComponentType<{ size: number; classN
   PORTFOLIO: Globe,
 }
 
-export function AlumniCard({ avatarUrl, name, nickname, bio, socialLinks, profileUrl }: AlumniCardProps) {
+export function AlumniCard({ avatarUrl, name, nickname, bio, socialLinks, messages, profileUrl }: AlumniCardProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
 
   return (
@@ -66,6 +72,21 @@ export function AlumniCard({ avatarUrl, name, nickname, bio, socialLinks, profil
 
         {/* Divider */}
         <div className="w-1/2 h-px my-6 rounded-full bg-border" />
+
+        {/* Messages */}
+        {messages && messages.length > 0 && (
+          <div className="w-full mb-6">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Memories</p>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {messages.map((msg) => (
+                <p key={msg.id} className="text-sm text-card-foreground leading-relaxed whitespace-pre-wrap line-clamp-3">
+                  {msg.text}
+                </p>
+              ))}
+            </div>
+            <div className="w-1/2 h-px my-4 rounded-full bg-border mx-auto" />
+          </div>
+        )}
 
         {/* Social Links */}
         <div className="flex items-center justify-center gap-3 flex-wrap">

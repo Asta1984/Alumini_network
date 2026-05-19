@@ -5,7 +5,6 @@ import { ProtectedRoute } from '@/lib/protected-route';
 import { Button } from '@/components/ui/button';
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { PageSkeleton } from '@/components/skeletons';
 import Link from 'next/link';
 
 interface AlumniProfile {
@@ -56,9 +55,10 @@ export default function AlumniProfilePage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-background p-8">
-          <div className="max-w-4xl mx-auto">
-            <PageSkeleton />
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading profile...</p>
           </div>
         </div>
       </ProtectedRoute>

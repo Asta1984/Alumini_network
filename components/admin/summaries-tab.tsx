@@ -108,7 +108,7 @@ export function SummariesTab() {
             size="sm"
             className={
               statusFilter === status
-                ? 'bg-violet-600 hover:bg-violet-500 text-white'
+                ? 'bg-accent hover:bg-accent/80 text-white'
                 : 'border-zinc-700 text-zinc-400 hover:bg-zinc-800'
             }
           >
@@ -121,7 +121,7 @@ export function SummariesTab() {
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
         {summariesLoading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-violet-500" />
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-300" />
           </div>
         ) : summaries.length === 0 ? (
           <div className="text-center py-16 text-zinc-500">

@@ -79,9 +79,6 @@ export default function SearchPage() {
                 className="w-full"
                 autoFocus
               />
-              <p className="text-xs text-muted-foreground mt-2">
-                Results update automatically as you type
-              </p>
             </div>
 
             {/* Results Section */}

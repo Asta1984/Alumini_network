@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { MemoryWallSpinner } from '@/components/memories/memory-wall-spinner';
 
 interface AlumniProfile {
   userId: string;
@@ -57,8 +58,7 @@ export default function AlumniProfilePage() {
       <ProtectedRoute>
         <div className="min-h-screen flex items-center justify-center bg-background">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading profile...</p>
+            <MemoryWallSpinner />
           </div>
         </div>
       </ProtectedRoute>

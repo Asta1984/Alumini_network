@@ -130,7 +130,7 @@ export function SettingsTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-violet-500" />
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-300" />
       </div>
     )
   }
@@ -191,7 +191,7 @@ export function SettingsTab() {
         <Button
           onClick={handleUpdateWindow}
           disabled={updating}
-          className="w-full bg-violet-600 hover:bg-violet-500 text-white"
+          className="w-full bg-accent hover:bg-accent/80 text-white"
         >
           {updating ? 'Updating...' : 'Update Window'}
         </Button>
@@ -262,7 +262,7 @@ export function SettingsTab() {
         <Button
           onClick={handleUpdateLimits}
           disabled={updating}
-          className="w-full bg-violet-600 hover:bg-violet-500 text-white"
+          className="w-full bg-accent hover:bg-accent/80 text-white"
         >
           {updating ? 'Updating...' : 'Update Limits'}
         </Button>

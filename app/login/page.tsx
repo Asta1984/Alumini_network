@@ -47,10 +47,17 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await verifyOtp(otp.trim())
-      router.push('/dashboard')
+      // Wait a moment for hydrate to complete, then check user profile status
+      setTimeout(() => {
+        const { user } = useAuthStore.getState()
+        if (user && !user.isProfileCompleted) {
+          router.push('/onboarding')
+        } else {
+          router.push('/dashboard')
+        }
+      }, 100)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid OTP')
-    } finally {
       setLoading(false)
     }
   }

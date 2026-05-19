@@ -4,9 +4,11 @@ import { useAuthStore } from '@/store/auth.store';
 import { ProtectedRoute } from '@/lib/protected-route';
 import { Button } from '@/components/ui/button';
 import { useRouter, useParams } from 'next/navigation';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { MemoryWallSpinner } from '@/components/memories/memory-wall-spinner';
+import { MessagePreview } from '@/components/memories/message-preview';
 
 interface AlumniProfile {
   userId: string;
@@ -23,6 +25,18 @@ interface AlumniProfile {
   createdAt: string;
 }
 
+// Add to your SentMessage interface (or import it from message-preview component)
+interface SentMessage {
+  id: string;
+  recipientId: string;
+  recipientName: string;
+  messageText: string;
+  characterCount: number;
+  createdAt: string | Date;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
+
 export default function AlumniProfilePage() {
   const params = useParams();
   const userId = params.userId as string;
@@ -32,9 +46,12 @@ export default function AlumniProfilePage() {
   const [profile, setProfile] = useState<AlumniProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [sentMessages, setSentMessages] = useState<SentMessage[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(true);
 
   useEffect(() => {
     fetchAlumniProfile();
+    fetchSentMessages();
   }, [userId]);
 
   const fetchAlumniProfile = async () => {
@@ -52,6 +69,19 @@ export default function AlumniProfilePage() {
       setLoading(false);
     }
   };
+  const fetchSentMessages = async () => {
+  try {
+    setMessagesLoading(true);
+    const response = await fetch('/api/messages/sent');
+    if (!response.ok) throw new Error('Failed to fetch messages');
+    const data = await response.json();
+    setSentMessages(data.messages); 
+  } catch (err) {
+    console.error('Failed to load sent messages:', err);
+  } finally {
+    setMessagesLoading(false);
+  }
+};
 
   if (loading) {
     return (
@@ -89,12 +119,14 @@ export default function AlumniProfilePage() {
   }
 
   const isOwnProfile = currentUser?.userId === userId;
-  const platformIcons: Record<string, string> = {
-    LINKEDIN: '🔗',
-    INSTAGRAM: '📸',
-    GITHUB: '💻',
-    TWITTER: '𝕏',
+  const platformIcons: Record<string, React.ReactNode> = {
+    LINKEDIN: <Image src="/linkedin-svgrepo-com.svg" alt="LinkedIn" width={16} height={16} />,
+    INSTAGRAM: <Image src="/instagram.svg" alt="Instagram" width={16} height={16} />,
+    GITHUB: <Image src="/github.svg" alt="GitHub" width={16} height={16} />,
+    TWITTER: <Image src="/x.svg" alt="Twitter" width={16} height={16} />,
   };
+
+
 
   return (
     <ProtectedRoute>
@@ -175,44 +207,54 @@ export default function AlumniProfilePage() {
                 )}
               </div>
             </div>
-
             {/* Main: Memory Card */}
-            <div className="lg:col-span-2">
-              {/* Memory Card */}
-              <div className="bg-card rounded-lg border border-border shadow-sm p-8">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-2">Memory</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {isOwnProfile
-                      ? 'Your memory summary'
-                      : `${profile.fullName}'s alumni memory summary`}
-                  </p>
-                </div>
+<div className="lg:col-span-2">
+  <div className="bg-card rounded-lg border border-border shadow-sm p-8">
+    <div className="mb-6">
+      <h2 className="text-2xl font-bold text-foreground mb-2">Memory</h2>
+      <p className="text-sm text-muted-foreground">
+        {isOwnProfile
+          ? 'Your memory summary'
+          : `${profile.fullName}'s alumni memory summary`}
+      </p>
+    </div>
 
-                {profile.aiSummary ? (
-                  <div className="bg-secondary/30 rounded-lg p-6 border border-border/50">
-                    <p className="text-foreground leading-relaxed whitespace-pre-wrap">
-                      {profile.aiSummary}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="bg-secondary/20 rounded-lg p-8 text-center border border-border/50">
-                    <p className="text-muted-foreground">
-                      {isOwnProfile
-                        ? 'No memory yet. Write your memories.'
-                        : 'No memory shared yet.'}
-                    </p>
-                    {isOwnProfile && (
-                      <Link href="/memories">
-                        <Button className="mt-4 bg-primary hover:bg-primary/90">
-                          Write Your Memory
-                        </Button>
-                      </Link>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+    {/* No memories at all */}
+    {!profile.aiSummary && sentMessages.length === 0 && (
+      <div className="bg-secondary/20 rounded-lg p-8 text-center border border-border/50">
+        <p className="text-muted-foreground">
+          {isOwnProfile ? 'No memory yet. Write your memories.' : 'No memory shared yet.'}
+        </p>
+        {isOwnProfile && (
+          <Link href="/memories">
+            <Button className="mt-4 bg-primary hover:bg-primary/90">
+              Write Your Memory
+            </Button>
+          </Link>
+        )}
+      </div>
+    )}
+
+    {/* AI Summary if available */}
+    {profile.aiSummary && (
+      <div className="bg-secondary/30 rounded-lg p-6 border border-border/50 mb-6">
+        <p className="text-foreground leading-relaxed whitespace-pre-wrap">
+          {profile.aiSummary}
+        </p>
+      </div>
+    )}
+
+    {/* Sent Messages */}
+    {sentMessages.length > 0 && (
+      <div>
+        <h3 className="font-semibold text-foreground mb-4">
+          {isOwnProfile ? 'Your Sent Memories' : 'Memories Written'}
+        </h3>
+        <MessagePreview messages={sentMessages} isLoading={messagesLoading} />
+      </div>
+    )}
+  </div>
+</div>
           </div>
         </main>
       </div>

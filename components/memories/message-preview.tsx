@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Eye, AlertCircle, CheckCircle2, XCircle } from 'lucide-react'
+import { Eye} from 'lucide-react'
 
 interface SentMessage {
   id: string
@@ -13,7 +12,6 @@ interface SentMessage {
   messageText: string
   characterCount: number
   createdAt: string | Date
-  status: 'pending' | 'approved' | 'rejected'
 }
 
 interface MessagePreviewProps {
@@ -42,40 +40,11 @@ export function MessagePreview({ messages, isLoading }: MessagePreviewProps) {
     )
   }
 
-  const getStatusInfo = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return {
-          icon: AlertCircle,
-          label: 'Pending',
-          color: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-        }
-      case 'approved':
-        return {
-          icon: CheckCircle2,
-          label: 'Approved',
-          color: 'bg-green-50 text-green-700 border-green-200',
-        }
-      case 'rejected':
-        return {
-          icon: XCircle,
-          label: 'Rejected',
-          color: 'bg-red-50 text-red-700 border-red-200',
-        }
-      default:
-        return {
-          icon: AlertCircle,
-          label: 'Unknown',
-          color: 'bg-gray-50 text-gray-700 border-gray-200',
-        }
-    }
-  }
+  
 
   return (
     <div className="space-y-3">
       {messages.map((msg) => {
-        const statusInfo = getStatusInfo(msg.status)
-        const StatusIcon = statusInfo.icon
 
         return (
           <div
@@ -102,13 +71,7 @@ export function MessagePreview({ messages, isLoading }: MessagePreviewProps) {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <Badge
-                  variant="outline"
-                  className={statusInfo.color}
-                >
-                  <StatusIcon className="w-3 h-3 mr-1" />
-                  {statusInfo.label}
-                </Badge>
+
                 <Button
                   size="sm"
                   variant="ghost"
@@ -127,24 +90,6 @@ export function MessagePreview({ messages, isLoading }: MessagePreviewProps) {
           <DialogHeader>
             <DialogTitle>Message to {selectedMessage?.recipientName}</DialogTitle>
           </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Status</p>
-              <div className="flex items-center gap-2">
-                {selectedMessage && (() => {
-                  const statusInfo = getStatusInfo(selectedMessage.status)
-                  const StatusIcon = statusInfo.icon
-                  return (
-                    <Badge variant="outline" className={statusInfo.color}>
-                      <StatusIcon className="w-3 h-3 mr-1" />
-                      {statusInfo.label}
-                    </Badge>
-                  )
-                })()}
-              </div>
-            </div>
-
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Message</p>
               <div className="bg-secondary rounded-lg p-4 text-foreground text-sm leading-relaxed whitespace-pre-wrap">
@@ -173,7 +118,6 @@ export function MessagePreview({ messages, isLoading }: MessagePreviewProps) {
                 <p className="font-medium text-foreground">{selectedMessage?.recipientName}</p>
               </div>
             </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

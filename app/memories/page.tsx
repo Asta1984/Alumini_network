@@ -52,9 +52,6 @@ export default function MemoriesPage() {
     maxPerUser: 100,
   })
 
-  // Messages history
-  const [sentMessages, setSentMessages] = useState<SentMessage[]>([])
-  const [messagesLoading, setMessagesLoading] = useState(false)
 
   // Protect route
   useEffect(() => {
@@ -87,11 +84,6 @@ export default function MemoriesPage() {
             maxCharacters: windowData.maxCharacters || 60,
             maxPerUser: windowData.maxPerUser || 100,
           })
-        }
-
-        if (messagesRes.ok) {
-          const messagesData = await messagesRes.json()
-          setSentMessages(messagesData.messages || [])
         }
       } catch (error) {
         console.error('Failed to load data:', error)
@@ -148,13 +140,6 @@ export default function MemoriesPage() {
       // Reset form
       setMessageText('')
       setRecipientId('')
-
-      // Refresh sent messages
-      const messagesRes = await fetch('/api/messages/sent')
-      if (messagesRes.ok) {
-        const messagesData = await messagesRes.json()
-        setSentMessages(messagesData.messages || [])
-      }
     } catch (error) {
       console.error('Error sending message:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to send memory'
@@ -202,7 +187,7 @@ export default function MemoriesPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-4xl place-items-center mx-auto py-8">
         <div className="grid md:grid-cols-3 gap-8">
           {/* Write Form */}
           <div className="md:col-span-2 space-y-6">
@@ -282,14 +267,6 @@ export default function MemoriesPage() {
                   </div>
                 )}
               </form>
-            </div>
-          </div>
-
-          {/* Sent Messages History Sidebar */}
-          <div className="md:col-span-1">
-            <div className="bg-card rounded-lg border border-border p-6 sticky top-4">
-              <h3 className="font-semibold text-foreground mb-4">Your Sent Memories</h3>
-              <MessagePreview messages={sentMessages} isLoading={messagesLoading} />
             </div>
           </div>
         </div>

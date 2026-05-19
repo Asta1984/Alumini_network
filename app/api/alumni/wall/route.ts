@@ -16,10 +16,9 @@ export async function GET(request: NextRequest) {
     const limit = 20
     const skip = (page - 1) * limit
 
-    // Get all alumni (ALUMNI users) with their approved/modified messages
+    // Get all users with their approved/modified messages (ALUMNI wall shows approved memories from any user)
     const alumni = await prisma.user.findMany({
       where: {
-        userType: 'ALUMNI',
         isProfileCompleted: true,
         messagesReceived: {
           some: {
@@ -57,7 +56,6 @@ export async function GET(request: NextRequest) {
     // Get total count
     const total = await prisma.user.count({
       where: {
-        userType: 'ALUMNI',
         isProfileCompleted: true,
         messagesReceived: {
           some: {

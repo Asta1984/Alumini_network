@@ -98,7 +98,7 @@ export function MessagesTab({ students }: MessageTabProps) {
                       key={student.id}
                       onClick={() => handleSelectStudent(student)}
                       className={`cursor-pointer hover:bg-zinc-800/50 transition ${
-                        selectedStudent?.id === student.id ? 'bg-violet-600/20 border-l-2 border-l-violet-600' : ''
+                        selectedStudent?.id === student.id ? 'bg-accent/10 border-l-2 border-l-accent' : ''
                       }`}
                     >
                       <td className="px-4 py-3">
@@ -136,7 +136,7 @@ export function MessagesTab({ students }: MessageTabProps) {
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
             {messageLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-500" />
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-300" />
               </div>
             ) : messages.length === 0 ? (
               <div className="p-6 text-center text-zinc-500">
@@ -169,7 +169,7 @@ export function MessagesTab({ students }: MessageTabProps) {
                           <Button
                             size="sm"
                             onClick={() => handleViewMessage(msg)}
-                            className="bg-violet-600 hover:bg-violet-700 text-white whitespace-nowrap shrink-0"
+                            className="bg-accent/10 hover:bg-accent/20 text-white whitespace-nowrap shrink-0"
                           >
                             Review
                           </Button>

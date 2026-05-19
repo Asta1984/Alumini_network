@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuthStore } from '@/store/auth.store'
 import { ProtectedRoute } from '@/lib/protected-route'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { MemoryWallSpinner } from '@/components/memories/memory-wall-spinner'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -96,7 +97,7 @@ export default function AlumniWallPage() {
         <div className="container mx-auto px-4 py-8">
           {isLoading ? (
             <div className="flex justify-center items-center min-h-96">
-              <p className="text-muted-foreground">Loading alumni memoirs...</p>
+              <MemoryWallSpinner />
             </div>
           ) : error ? (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">

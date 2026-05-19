@@ -2,6 +2,7 @@
 .env
 generated/
 node_modules/.prisma/
+next-env.d.ts
 
 # Common ignores
 node_modules

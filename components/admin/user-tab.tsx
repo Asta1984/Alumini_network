@@ -136,7 +136,7 @@ export function UsersTab() {
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-violet-500" />
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-300" />
           </div>
         ) : users.length === 0 ? (
           <div className="text-center py-16 text-zinc-500">
@@ -192,7 +192,7 @@ export function UsersTab() {
                           ? 'text-zinc-500'
                           : user.userType === 'ALUMNI'
                           ? 'text-amber-400 hover:text-amber-300'
-                          : 'text-violet-400 hover:text-violet-300'
+                          : 'text-accent hover:text-accent/80'
                       } disabled:opacity-50`}
                     >
                       {tagLoading === user.id && <Loader2 className="w-3 h-3 animate-spin" />}

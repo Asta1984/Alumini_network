@@ -253,7 +253,7 @@ export function MessageActionModal({ message, isOpen, onClose, onActionComplete 
                           : handleModify
                     }
                     disabled={isLoading}
-                    className="flex-1 bg-violet-600 hover:bg-violet-700 text-white"
+                    className="flex-1 bg-accent hover:bg-muted-foreground text-white"
                   >
                     {isLoading ? 'Processing...' : `Confirm ${action}`}
                   </Button>

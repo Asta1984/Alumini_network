@@ -222,7 +222,7 @@ export default function AdminDashboard() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-300" />
       </div>
     )
   }
@@ -270,7 +270,7 @@ export default function AdminDashboard() {
                 <Button
                   onClick={generateAllLinks}
                   disabled={bulkLinkLoading}
-                  className="bg-violet-600 hover:bg-violet-500 text-white text-sm"
+                  className="bg-accent hover:bg-accent/80 text-white text-sm"
                 >
                   {bulkLinkLoading ? 'Generating...' : 'Generate All Links'}
                 </Button>
@@ -317,7 +317,7 @@ export default function AdminDashboard() {
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
               {searchLoading ? (
                 <div className="flex items-center justify-center py-16">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-violet-500" />
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-300" />
                 </div>
               ) : students.length === 0 ? (
                 <div className="text-center py-16 text-zinc-500">
@@ -371,7 +371,7 @@ export default function AdminDashboard() {
                               <button
                                 onClick={() => generateLink(student.id)}
                                 disabled={linkLoading === student.id}
-                                className="text-xs text-violet-400 hover:text-violet-300 transition disabled:opacity-50"
+                                className="text-xs text-accent hover:text-accent/80 transition disabled:opacity-50"
                               >
                                 {linkLoading === student.id ? 'Generating...' : student.hasOnboardingLink ? ' Regenerate' : ' Generate Link'}
                               </button>
@@ -466,7 +466,7 @@ export default function AdminDashboard() {
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-6">
               <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">Required CSV Format</p>
               <div className="bg-zinc-950 rounded-lg p-3 font-mono text-xs text-zinc-400 overflow-x-auto">
-                <p className="text-violet-400">full_name,enrollment_number,email,mobile</p>
+                <p className="text-accent">full_name,enrollment_number,email,mobile</p>
                 <p>Rahul Sharma,23BCE001,rahul@college.edu,9876543210</p>
                 <p>Priya Patel,23BCE002,priya@college.edu,9876543211</p>
               </div>
@@ -475,7 +475,7 @@ export default function AdminDashboard() {
             {/* Upload area */}
             <div
               onClick={() => fileRef.current?.click()}
-              className="border-2 border-dashed border-zinc-700 rounded-xl p-10 text-center cursor-pointer hover:border-violet-500/50 hover:bg-violet-500/5 transition group mb-4"
+              className="border-2 border-dashed border-zinc-700 rounded-xl p-10 text-center cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition group mb-4"
             >
               <div className="text-4xl mb-3">📂</div>
               <p className="text-zinc-300 font-medium group-hover:text-white transition">
@@ -541,7 +541,7 @@ export default function AdminDashboard() {
             <Button
               onClick={handleImport}
               disabled={csvData.length === 0 || importing}
-              className="w-full bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-40"
+              className="w-full bg-accent hover:bg-accent/80 text-white disabled:opacity-40"
             >
               {importing ? 'Importing...' : `Import ${csvData.length} Students`}
             </Button>

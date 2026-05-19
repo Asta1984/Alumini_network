@@ -162,7 +162,7 @@ export function AdminSidebar({ activeTab, onTabChange, onCollapse }: AdminSideba
                         onClick={() => onTabChange(item.tab)}
                         className={cn(
                           'flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-zinc-800 hover:text-white',
-                          activeTab === item.tab && 'bg-violet-600 text-white'
+                          activeTab === item.tab && 'bg-accent text-white'
                         )}
                       >
                         {item.icon}
@@ -178,7 +178,7 @@ export function AdminSidebar({ activeTab, onTabChange, onCollapse }: AdminSideba
                       onClick={() => onTabChange('settings')}
                       className={cn(
                         'flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-zinc-800 hover:text-white',
-                        activeTab === 'settings' && 'bg-violet-600 text-white'
+                        activeTab === 'settings' && 'bg-accent text-white'
                       )}
                     >
                       <Settings className="h-4 w-4 shrink-0" />
@@ -192,7 +192,7 @@ export function AdminSidebar({ activeTab, onTabChange, onCollapse }: AdminSideba
                       onClick={() => onTabChange('import')}
                       className={cn(
                         'flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-zinc-800 hover:text-white',
-                        activeTab === 'import' && 'bg-violet-600 text-white'
+                        activeTab === 'import' && 'bg-accent text-white'
                       )}
                     >
                       <FileUp className="h-4 w-4 shrink-0" />

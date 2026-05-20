@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyAdminToken } from '@/lib/auth'
+import { verifyAdminToken, extractAdminToken } from '@/lib/admin-auth'
 
 // Generate CSV from messages data
 function generateCSV(messages: any[], type: string): string {
@@ -26,17 +26,10 @@ function generateCSV(messages: any[], type: string): string {
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin authentication
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const token = authHeader.slice(7)
-    const decoded = verifyAdminToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
-    }
+    // Verify admin authentication using cookie
+    const token = extractAdminToken(request.headers.get('cookie'))
+    const decoded = token ? verifyAdminToken(token) : null
+    if (!decoded) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const searchParams = request.nextUrl.searchParams
     const exportType = searchParams.get('type') || 'all' // 'all' or 'single'

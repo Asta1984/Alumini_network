@@ -1,0 +1,1 @@
+export type Tab = 'students' | 'users' | 'messages' | 'summaries' | 'settings' | 'import'

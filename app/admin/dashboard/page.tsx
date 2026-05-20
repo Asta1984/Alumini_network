@@ -7,12 +7,12 @@ import { useAdminStore } from '@/store/admin.store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MessagesTab } from '@/components/admin/messages-tab'
-import { SummariesTab } from '@/components/admin/summaries-tab'
 import { SettingsTab } from '@/components/admin/settings-tab'
 import { UsersTab } from '@/components/admin/user-tab'
 import { AdminSidebar } from '@/components/admin/sidebar'
 import { useAsyncSearch } from '@/lib/hooks/useDebounce'
 import { motion } from 'framer-motion'
+import type { Tab } from '@/types/tab-types'
 
 interface Student {
   id: string
@@ -33,7 +33,6 @@ interface Pagination {
   pages: number
 }
 
-type Tab = 'students' | 'users' | 'messages' | 'summaries' | 'settings' | 'import'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -439,7 +438,6 @@ export default function AdminDashboard() {
               <h1 className="text-2xl font-bold">Summary Approval</h1>
               <p className="text-zinc-500 text-sm mt-0.5">Review and approve AI-generated memory summaries</p>
             </div>
-            <SummariesTab />
           </div>
         )}
 

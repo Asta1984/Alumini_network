@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { motion } from 'framer-motion'
+import type { Tab } from '@/types/tab-types'
 import {
   LayoutDashboard,
   LogOut,
@@ -12,7 +13,6 @@ import {
   Users,
   FileUp,
   ChevronsUpDown,
-  StickyNoteIcon
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -27,8 +27,6 @@ import { Separator } from '@/components/ui/separator'
 import { useRouter } from 'next/navigation'
 import { useAdminStore } from '@/store/admin.store'
 import { useState } from 'react'
-
-type Tab = 'students' | 'users' | 'messages' | 'summaries' | 'settings' | 'import'
 
 interface AdminSidebarProps {
   activeTab: Tab
@@ -84,7 +82,6 @@ const menuItems: Array<{ label: string; tab: Tab; icon: React.ReactNode }> = [
   { label: 'Students', tab: 'students', icon: <Users className="h-4 w-4" /> },
   { label: 'Alumni Tags', tab: 'users', icon: <LayoutDashboard className="h-4 w-4" /> },
   { label: 'Messages', tab: 'messages', icon: <MessageSquare className="h-4 w-4" /> },
-  { label: 'Summaries', tab: 'summaries', icon: <StickyNoteIcon className="h-4 w-4" /> },
 ]
 
 export function AdminSidebar({ activeTab, onTabChange, onCollapse }: AdminSidebarProps) {

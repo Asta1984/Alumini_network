@@ -67,6 +67,7 @@ model User {
   profilePictureUrl  String?
   nickname           String?
   bio                String?
+  graduationYear     Int?
   userType           UserType @default(STUDENT)
   isProfileCompleted Boolean  @default(false)
   createdAt          DateTime @default(now())
@@ -246,4 +247,6 @@ model AlumniShowcase {
 
   @@map("alumni_showcase")
 }
+
+
 

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useDebounce } from '@/lib/hooks'
+import { useAsyncSearch, useDebounce } from '@/lib/hooks'
 import { Badge } from '@/components/ui/badge'
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 
@@ -33,16 +33,34 @@ export function UsersTab() {
   const [tagLoading, setTagLoading] = useState<string | null>(null)
   const [tagSuccess, setTagSuccess] = useState<string | null>(null)
   const [tagError, setTagError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [graduationYearFilter, setGraduationYearFilter] = useState<string>('')
+  const [students, setStudents] = useState<User[]>([])
+  
 
   useEffect(() => {
     fetchUsers(1, debouncedSearch)
   }, [debouncedSearch])
 
-  const fetchUsers = async (page = 1, q = '') => {
+  // Search function for useAsyncSearch
+  const searchFn = useCallback(async (query: string) => {
+    const params = new URLSearchParams({ page: '1' })
+    if (query) params.set('q', query)
+    const res = await fetch(`/api/admin/students?${params}`)
+    if (!res.ok) throw new Error('Search failed')
+    const data = await res.json()
+    setStudents(data.students)
+    setPagination(data.pagination)
+    return data.students
+  }, [])
+  const { results, isLoading: searchLoading } = useAsyncSearch(searchQuery, searchFn, 400)
+  
+  const fetchUsers = async (page = 1, q = '', gradYear = '') => {
     setLoading(true)
     try {
       const params = new URLSearchParams({ page: String(page) })
       if (q) params.set('q', q)
+      if (gradYear) params.set('graduationYear', gradYear)
       const res = await fetch(`/api/admin/students?${params}`)
       if (res.ok) {
         const data = await res.json()
@@ -108,15 +126,46 @@ export function UsersTab() {
         </div>
       )}
 
-      {/* Search */}
-      <div className="mb-6">
-        <Input
-          placeholder="Search by name, enrollment, or email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 max-w-sm"
-        />
-      </div>
+            {/* Search and Filters */}
+            <div className="flex gap-2 mb-6 items-center flex-wrap">
+              <Input
+                placeholder="Search by name, enrollment, or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 max-w-sm"
+              />
+              
+              {/* Graduation Year Filter */}
+              <select
+                value={graduationYearFilter}
+                onChange={(e) => {
+                  setGraduationYearFilter(e.target.value)
+                  fetchUsers(1, searchQuery, e.target.value)
+                }}
+                className="bg-zinc-900 border border-zinc-700 text-white rounded px-3 py-2 text-sm max-w-xs"
+              >
+                <option value="">All Years</option>
+                {Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                  <option key={year} value={String(year)}>{year}</option>
+                ))}
+              </select>
+
+              {searchLoading && <span className="text-xs text-zinc-500">Searching...</span>}
+              {(searchQuery || graduationYearFilter) && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-zinc-500 hover:text-white"
+                  onClick={() => { 
+                    setSearchQuery('')
+                    setGraduationYearFilter('')
+                    fetchUsers(1, '', '')
+                  }}
+                >
+                  Clear All
+                </Button>
+              )}
+            </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">

@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       fullName,
       nickname,
       bio,
+      graduationYear,
       profilePictureUrl,
       socialProfiles,
     }: {
@@ -29,6 +30,7 @@ export async function POST(request: NextRequest) {
       fullName: string
       nickname?: string
       bio?: string
+      graduationYear?: number
       profilePictureUrl?: string
       socialProfiles: SocialProfileInput[]
     } = body
@@ -126,6 +128,7 @@ export async function POST(request: NextRequest) {
           fullName: fullName.trim(),
           nickname: nickname?.trim() || null,
           bio: bio?.trim() || null,
+          graduationYear: graduationYear || null,
           profilePictureUrl: profilePictureUrl || null,
           isProfileCompleted: true,
         },

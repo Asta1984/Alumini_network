@@ -12,7 +12,6 @@ import { UsersTab } from '@/components/admin/user-tab'
 import { AdminSidebar } from '@/components/admin/sidebar'
 import { useAsyncSearch } from '@/lib/hooks/useDebounce'
 import { motion } from 'framer-motion'
-import type { Tab } from '@/types/tab-types'
 
 interface Student {
   id: string
@@ -20,6 +19,7 @@ interface Student {
   enrollmentNumber: string
   email: string
   mobile: string
+  graduationYear: number | null
   isProfileCompleted: boolean
   hasOnboardingLink: boolean
   linkUsed: boolean
@@ -33,6 +33,7 @@ interface Pagination {
   pages: number
 }
 
+type Tab = 'students' | 'users' | 'messages' | 'summaries' | 'settings' | 'import'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -43,6 +44,7 @@ export default function AdminDashboard() {
   const [students, setStudents] = useState<Student[]>([])
   const [pagination, setPagination] = useState<Pagination>({ page: 1, total: 0, pages: 1 })
   const [searchQuery, setSearchQuery] = useState('')
+  const [graduationYearFilter, setGraduationYearFilter] = useState<string>('')
   const [linkLoading, setLinkLoading] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [generatedLinks, setGeneratedLinks] = useState<Record<string, string>>({})
@@ -79,10 +81,11 @@ export default function AdminDashboard() {
 
   const { results, isLoading: searchLoading } = useAsyncSearch(searchQuery, searchFn, 400)
 
-  const fetchStudents = async (page = 1, q = '') => {
+  const fetchStudents = async (page = 1, q = '', gradYear = '') => {
     try {
       const params = new URLSearchParams({ page: String(page) })
       if (q) params.set('q', q)
+      if (gradYear) params.set('graduationYear', gradYear)
       const res = await fetch(`/api/admin/students?${params}`)
       if (res.ok) {
         const data = await res.json()
@@ -105,7 +108,7 @@ export default function AdminDashboard() {
       const data = await res.json()
       if (res.ok) {
         setGeneratedLinks(prev => ({ ...prev, [studentId]: data.url }))
-        fetchStudents(pagination.page, searchQuery)
+        fetchStudents(pagination.page, searchQuery, graduationYearFilter)
       }
     } finally {
       setLinkLoading(null)
@@ -123,7 +126,7 @@ export default function AdminDashboard() {
       })
       const data = await res.json()
       setBulkResult(data.message)
-      fetchStudents(pagination.page, searchQuery)
+      fetchStudents(pagination.page, searchQuery, graduationYearFilter)
     } finally {
       setBulkLinkLoading(false)
     }
@@ -276,23 +279,43 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Search */}
-            <div className="flex gap-2 mb-6 items-center">
+            {/* Search and Filters */}
+            <div className="flex gap-2 mb-6 items-center flex-wrap">
               <Input
                 placeholder="Search by name, enrollment, or email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 max-w-sm"
               />
+              
+              {/* Graduation Year Filter */}
+              <select
+                value={graduationYearFilter}
+                onChange={(e) => {
+                  setGraduationYearFilter(e.target.value)
+                  fetchStudents(1, searchQuery, e.target.value)
+                }}
+                className="bg-zinc-900 border border-zinc-700 text-white rounded px-3 py-2 text-sm max-w-xs"
+              >
+                <option value="">All Years</option>
+                {Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                  <option key={year} value={String(year)}>{year}</option>
+                ))}
+              </select>
+
               {searchLoading && <span className="text-xs text-zinc-500">Searching...</span>}
-              {searchQuery && (
+              {(searchQuery || graduationYearFilter) && (
                 <Button
                   type="button"
                   variant="ghost"
                   className="text-zinc-500 hover:text-white"
-                  onClick={() => { setSearchQuery(''); fetchStudents(1, '') }}
+                  onClick={() => { 
+                    setSearchQuery('')
+                    setGraduationYearFilter('')
+                    fetchStudents(1, '', '')
+                  }}
                 >
-                  Clear
+                  Clear All
                 </Button>
               )}
             </div>
@@ -395,7 +418,7 @@ export default function AdminDashboard() {
                     variant="outline"
                     size="sm"
                     disabled={pagination.page <= 1}
-                    onClick={() => fetchStudents(pagination.page - 1, searchQuery)}
+                    onClick={() => fetchStudents(pagination.page - 1, searchQuery, graduationYearFilter)}
                     className="border-zinc-700 text-zinc-400 hover:bg-zinc-800"
                   >
                     Previous
@@ -404,7 +427,7 @@ export default function AdminDashboard() {
                     variant="outline"
                     size="sm"
                     disabled={pagination.page >= pagination.pages}
-                    onClick={() => fetchStudents(pagination.page + 1, searchQuery)}
+                    onClick={() => fetchStudents(pagination.page + 1, searchQuery, graduationYearFilter)}
                     className="border-zinc-700 text-zinc-400 hover:bg-zinc-800"
                   >
                     Next

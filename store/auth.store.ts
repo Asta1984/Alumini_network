@@ -20,6 +20,7 @@ export interface AuthUser {
   socialProfiles: SocialProfile[]
   aiSummary: string | null
   createdAt: string
+  graduationYear: number | null
 }
 
 export interface SocialProfile {

@@ -24,6 +24,7 @@ function OnboardingForm() {
   const [fullName, setFullName] = useState(user?.fullName || '')
   const [nickname, setNickname] = useState(user?.nickname || '')
   const [bio, setBio] = useState(user?.bio || '')
+  const [graduationYear, setGraduationYear] = useState(user?.graduationYear?.toString() || '')
   const [linkedin, setLinkedin] = useState('')
   const [instagram, setInstagram] = useState('')
   const [github, setGithub] = useState('')
@@ -78,6 +79,7 @@ function OnboardingForm() {
           fullName: fullName.trim(),
           nickname: nickname.trim() || undefined,
           bio: bio.trim() || undefined,
+          graduationYear: graduationYear.trim() ? parseInt(graduationYear.trim(), 10) : undefined,
           socialProfiles,
         }),
       })
@@ -143,6 +145,21 @@ function OnboardingForm() {
           className="resize-none h-24"
         />
         <p className="text-xs text-muted-foreground mt-1">Share a bit about yourself (max 500 characters)</p>
+      </div>
+
+      {/* Graduation Year */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">Graduation Year (Optional)</label>
+        <Input
+          type="number"
+          placeholder="e.g., 2020"
+          value={graduationYear}
+          onChange={(e) => setGraduationYear(e.target.value)}
+          disabled={isLoading}
+          min="1990"
+          max={new Date().getFullYear() + 10}
+        />
+        <p className="text-xs text-muted-foreground mt-1">Your expected or actual graduation year</p>
       </div>
 
       {/* Social Profiles */}

@@ -14,17 +14,24 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const q = searchParams.get('q')?.trim()
+    const graduationYear = searchParams.get('graduationYear')?.trim()
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
     const limit = 20
     const skip = (page - 1) * limit
 
-    const where = q ? {
-      OR: [
+    const where: any = {}
+
+    if (q) {
+      where.OR = [
         { fullName: { contains: q, mode: 'insensitive' as const } },
         { enrollmentNumber: { contains: q, mode: 'insensitive' as const } },
         { email: { contains: q, mode: 'insensitive' as const } },
       ]
-    } : {}
+    }
+
+    if (graduationYear) {
+      where.graduationYear = parseInt(graduationYear, 10)
+    }
 
     const [students, total] = await Promise.all([
       prisma.user.findMany({
@@ -38,6 +45,7 @@ export async function GET(request: NextRequest) {
           enrollmentNumber: true,
           email: true,
           mobile: true,
+          graduationYear: true,
           isProfileCompleted: true,
           userType: true,
           createdAt: true,
@@ -56,6 +64,7 @@ export async function GET(request: NextRequest) {
         enrollmentNumber: s.enrollmentNumber,
         email: s.email,
         mobile: s.mobile,
+        graduationYear: s.graduationYear,
         isProfileCompleted: s.isProfileCompleted,
         userType: s.userType,
         hasOnboardingLink: !!s.onboardingLink,

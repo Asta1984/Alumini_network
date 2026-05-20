@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { MessageActionModal } from './message-action-modal'
 import { format } from 'date-fns'
-import { AlertCircle, CheckCircle, XCircle, Edit2 } from 'lucide-react'
+import { AlertCircle, CheckCircle, XCircle, Edit2, Download } from 'lucide-react'
 
 interface Message {
   id: string
@@ -37,6 +37,7 @@ export function MessagesTab({ students }: MessageTabProps) {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 1 })
+  const [exporting, setExporting] = useState(false)
 
   const fetchMessages = async (studentId: string, page = 1) => {
     setMessageLoading(true)
@@ -49,6 +50,40 @@ export function MessagesTab({ students }: MessageTabProps) {
       }
     } finally {
       setMessageLoading(false)
+    }
+  }
+
+  const handleExport = async (type: 'single' | 'all') => {
+    setExporting(true)
+    try {
+      const params = new URLSearchParams({ type })
+      if (type === 'single' && selectedStudent) {
+        params.set('studentId', selectedStudent.id)
+      }
+      
+      const res = await fetch(`/api/admin/messages/export?${params}`)
+      if (res.ok) {
+        // Get filename from Content-Disposition header
+        const contentDisposition = res.headers.get('content-disposition')
+        const filename = contentDisposition
+          ?.split('filename="')[1]
+          ?.split('"')[0] || `messages_${new Date().toISOString().split('T')[0]}.csv`
+
+        // Convert response to blob and trigger download
+        const blob = await res.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      }
+    } catch (error) {
+      console.error('[v0] Export error:', error)
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -220,6 +255,30 @@ export function MessagesTab({ students }: MessageTabProps) {
               </div>
             </div>
           )}
+
+          {/* Export Buttons */}
+          <div className="flex gap-2 mt-4">
+            {selectedStudent && (
+              <Button
+                size="sm"
+                onClick={() => handleExport('single')}
+                disabled={exporting || messages.length === 0}
+                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+              >
+                <Download size={16} />
+                Download Selected
+              </Button>
+            )}
+            <Button
+              size="sm"
+              onClick={() => handleExport('all')}
+              disabled={exporting}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2"
+            >
+              <Download size={16} />
+              Download All
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 text-center">

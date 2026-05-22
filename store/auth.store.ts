@@ -113,7 +113,10 @@ export const useAuthStore = create<AuthState>()(
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Invalid OTP')
 
+        // Hydrate user data after successful OTP verification
         await get().hydrate()
+        
+        // Reset login flow after successful authentication
         set({ loginStep: 'identifier', pendingIdentifier: null, maskedEmail: null })
       },
 

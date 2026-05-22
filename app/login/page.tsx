@@ -47,15 +47,23 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await verifyOtp(otp.trim())
-      // Wait a moment for hydrate to complete, then check user profile status
-      setTimeout(() => {
-        const { user } = useAuthStore.getState()
-        if (user && !user.isProfileCompleted) {
-          router.push('/onboarding')
-        } else {
-          router.push('/dashboard')
-        }
-      }, 100)
+      // verifyOtp calls hydrate() internally, so user should be available immediately after
+      // Add a small delay to ensure state is updated
+      await new Promise(resolve => setTimeout(resolve, 150))
+      
+      const { user } = useAuthStore.getState()
+      console.log('[v0] After OTP verification - user:', user)
+      
+      if (user && !user.isProfileCompleted) {
+        console.log('[v0] Profile incomplete, redirecting to /onboarding')
+        router.push('/onboarding')
+      } else if (user && user.isProfileCompleted) {
+        console.log('[v0] Profile completed, redirecting to /dashboard')
+        router.push('/dashboard')
+      } else {
+        console.log('[v0] No user found after OTP verification, redirecting to /')
+        router.push('/')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid OTP')
       setLoading(false)

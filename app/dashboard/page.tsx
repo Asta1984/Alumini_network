@@ -43,7 +43,6 @@ export default function DashboardPage() {
                 onClick={handleLogout}
                 disabled={isLoggingOut}
                 variant="outline"
-                className="border-border text-foreground hover:bg-secondary"
               >
                 {isLoggingOut ? 'Logging out...' : 'Logout'}
               </Button>
@@ -61,8 +60,9 @@ export default function DashboardPage() {
                   Explore alumni memories, contribute your own, and celebrate the community you're part of.
                 </p>
                 <Link href={`/profile/${user?.userId}`}>
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                    View Your Profile
+                  <Button 
+                    variant="outline"
+                  >View Your Profile
                   </Button>
                 </Link>
               </div>

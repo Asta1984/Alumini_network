@@ -1,19 +1,26 @@
 // app/login/page.tsx
-// 2-step OTP login: identifier → OTP entry
-// Uses Zustand auth store
 
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/store/auth.store'
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
-  const { loginStep, maskedEmail, requestOtp, verifyOtp, resetLoginFlow } = useAuthStore()
+  const searchParams = useSearchParams()
+  const onboardingToken = searchParams.get('token')
+
+  const {
+    loginStep,
+    maskedEmail,
+    requestOtp,
+    verifyOtp,
+    resetLoginFlow,
+  } = useAuthStore()
 
   const [identifier, setIdentifier] = useState('')
   const [otp, setOtp] = useState('')
@@ -23,11 +30,14 @@ export default function LoginPage() {
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
     if (!identifier.trim()) {
       setError('Email or mobile number is required')
       return
     }
+
     setLoading(true)
+
     try {
       await requestOtp(identifier.trim())
     } catch (err) {
@@ -40,17 +50,35 @@ export default function LoginPage() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
     if (!otp.trim()) {
       setError('Please enter the OTP')
       return
     }
+
     setLoading(true)
+
     try {
       await verifyOtp(otp.trim())
-      router.push('/dashboard')
+
+      await new Promise((resolve) => setTimeout(resolve, 150))
+
+      const { user } = useAuthStore.getState()
+
+      if (onboardingToken) {
+        router.push(`/onboarding?token=${encodeURIComponent(onboardingToken)}`)
+        return
+      }
+
+      if (user && !user.isProfileCompleted) {
+        router.push('/onboarding')
+      } else if (user && user.isProfileCompleted) {
+        router.push('/dashboard')
+      } else {
+        router.push('/')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid OTP')
-    } finally {
       setLoading(false)
     }
   }
@@ -59,7 +87,6 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="bg-card rounded-lg shadow-lg border border-border p-8">
-
           {/* Logo / Title */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-foreground">Surabhi</h1>
@@ -68,7 +95,10 @@ export default function LoginPage() {
 
           {loginStep === 'identifier' ? (
             <>
-              <h2 className="text-xl font-semibold text-foreground mb-1">Sign in</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-1">
+                Sign in
+              </h2>
+
               <p className="text-sm text-muted-foreground mb-6">
                 Enter your registered email or mobile number
               </p>
@@ -84,6 +114,7 @@ export default function LoginPage() {
                   <label className="block text-sm font-medium text-foreground mb-2">
                     Email or Mobile
                   </label>
+
                   <Input
                     type="text"
                     placeholder="you@institution.edu or 9876543210"
@@ -93,6 +124,7 @@ export default function LoginPage() {
                     autoFocus
                   />
                 </div>
+
                 <Button
                   type="submit"
                   disabled={loading}
@@ -104,9 +136,15 @@ export default function LoginPage() {
             </>
           ) : (
             <>
-              <h2 className="text-xl font-semibold text-foreground mb-1">Enter OTP</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-1">
+                Enter OTP
+              </h2>
+
               <p className="text-sm text-muted-foreground mb-6">
-                A 6-digit OTP was sent to <span className="font-medium text-foreground">{maskedEmail}</span>
+                A 6-digit OTP was sent to{' '}
+                <span className="font-medium text-foreground">
+                  {maskedEmail}
+                </span>
               </p>
 
               {error && (
@@ -120,18 +158,22 @@ export default function LoginPage() {
                   <label className="block text-sm font-medium text-foreground mb-2">
                     OTP
                   </label>
+
                   <Input
                     type="text"
                     inputMode="numeric"
                     maxLength={6}
                     placeholder="483920"
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                    onChange={(e) =>
+                      setOtp(e.target.value.replace(/\D/g, ''))
+                    }
                     disabled={loading}
                     autoFocus
                     className="tracking-widest text-center text-xl"
                   />
                 </div>
+
                 <Button
                   type="submit"
                   disabled={loading}
@@ -142,7 +184,11 @@ export default function LoginPage() {
               </form>
 
               <button
-                onClick={() => { resetLoginFlow(); setError(''); setOtp('') }}
+                onClick={() => {
+                  resetLoginFlow()
+                  setError('')
+                  setOtp('')
+                }}
                 className="mt-4 w-full text-sm text-muted-foreground hover:text-foreground transition text-center"
               >
                 ← Use a different email or mobile
@@ -152,5 +198,19 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   )
 }

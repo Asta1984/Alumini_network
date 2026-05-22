@@ -175,18 +175,6 @@ export default function SearchPage() {
                               <span className="text-sm font-medium">LinkedIn</span>
                             </a>
                           )}
-
-                          {/* Visit Profile Button */}
-                          <Button
-                            variant="outline"
-                            className="border-border text-foreground hover:bg-secondary"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              router.push(`/profile/${result.userId}`)
-                            }}
-                          >
-                            Visit
-                          </Button>
                         </div>
                       </div>
                     )

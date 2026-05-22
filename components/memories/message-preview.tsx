@@ -49,7 +49,7 @@ export function MessagePreview({ messages, isLoading }: MessagePreviewProps) {
         return (
           <div
             key={msg.id}
-            className="border border-border rounded-lg p-4 hover:bg-secondary transition"
+            className="border border-border rounded-lg p-4 hover:bg-accent/10 transition"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
@@ -74,7 +74,7 @@ export function MessagePreview({ messages, isLoading }: MessagePreviewProps) {
 
                 <Button
                   size="sm"
-                  variant="ghost"
+                  variant="outline"
                   onClick={() => setSelectedMessage(msg)}
                 >
                   View
@@ -92,7 +92,7 @@ export function MessagePreview({ messages, isLoading }: MessagePreviewProps) {
           </DialogHeader>
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Message</p>
-              <div className="bg-secondary rounded-lg p-4 text-foreground text-sm leading-relaxed whitespace-pre-wrap">
+              <div className="bg-secondary/10 rounded-lg p-4 text-foreground text-sm leading-relaxed whitespace-pre-wrap">
                 {selectedMessage?.messageText}
               </div>
             </div>

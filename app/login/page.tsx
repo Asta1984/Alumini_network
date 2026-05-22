@@ -4,7 +4,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useSearchParams } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,8 @@ import { useAuthStore } from '@/store/auth.store'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const onboardingToken = searchParams.get('token')
   const { loginStep, maskedEmail, requestOtp, verifyOtp, resetLoginFlow } = useAuthStore()
 
   const [identifier, setIdentifier] = useState('')
@@ -52,9 +54,13 @@ export default function LoginPage() {
       await new Promise(resolve => setTimeout(resolve, 150))
       
       const { user } = useAuthStore.getState()
-      console.log('[v0] After OTP verification - user:', user)
+      console.log('[v0] After OTP verification - user:', user, 'onboardingToken:', onboardingToken)
       
-      if (user && !user.isProfileCompleted) {
+      // If onboarding token exists, always redirect to onboarding form (new users need profile completion)
+      if (onboardingToken) {
+        console.log('[v0] Onboarding token found, redirecting to /onboarding?token=...')
+        router.push(`/onboarding?token=${encodeURIComponent(onboardingToken)}`)
+      } else if (user && !user.isProfileCompleted) {
         console.log('[v0] Profile incomplete, redirecting to /onboarding')
         router.push('/onboarding')
       } else if (user && user.isProfileCompleted) {

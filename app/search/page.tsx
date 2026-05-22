@@ -47,16 +47,20 @@ export default function SearchPage() {
       <div className="min-h-screen bg-background">
         {/* Header */}
         <header className="border-b border-border bg-card">
-          <div className="max-w-6xl mx-auto px-4 py-4">
-            <Link href="/dashboard">
-              <Button variant="ghost" className="text-foreground hover:bg-secondary mb-4">
-                ← Back to Dashboard
-              </Button>
-            </Link>
+          <div className="grid grid-cols-2 max-w-6xl mx-auto px-4 py-4">
+            <div>
             <h1 className="text-2xl font-bold text-foreground">Find Alumni</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Search and connect with your batchmates
             </p>
+            </div>
+            <div className='flex justify-end'>
+            <Link href="/dashboard">
+              <Button variant="ghost" className="text-foreground hover:bg-secondary mb-4">
+                ← Dashboard
+              </Button>
+            </Link>
+            </div>
           </div>
         </header>
 

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useAdminStore } from '@/store/admin.store'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import Image from 'next/image'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -44,10 +45,8 @@ export default function AdminLoginPage() {
       <div className="relative w-full max-w-sm">
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 mb-4">
-            <svg className="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-            </svg>
+          <div className="inline-flex items-center justify-center bg-amber-100-500/10 border-amber-200-500/20 mb-4">
+            <Image src="/icon.png" alt="Surabhi Icon" width={150} height={100} className='bg-amber-50 rounded-sm border-t-2 border-r-2 p-1' />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Admin Panel</h1>
           <p className="text-zinc-500 text-sm mt-1">Surabhi Alumni Memory Book</p>
@@ -72,7 +71,7 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:border-violet-500 focus-visible:ring-violet-500/20"
+                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:border-blue-500 focus-visible:ring-blue-400/20"
               />
             </div>
 
@@ -86,14 +85,14 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:border-violet-500 focus-visible:ring-violet-500/20"
+                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:border-blue-500 focus-visible:ring-blue-400/20"
               />
             </div>
 
             <Button
-              type="submit"
+              variant="ghost"
               disabled={loading}
-              className="w-full bg-violet-600 hover:bg-violet-500 text-white border-0 mt-2"
+              className="w-full  text-white border mt-2"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>

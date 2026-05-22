@@ -132,10 +132,10 @@ export default function AlumniProfilePage() {
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
         <header className="border-b border-border bg-card">
-          <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="max-w-6xl mx-auto px-4 py-4 flex justify-end">
             <Link href="/dashboard">
               <Button variant="ghost" className="text-foreground hover:bg-secondary">
-                ← Back to Dashboard
+                ← Dashboard
               </Button>
             </Link>
           </div>

@@ -78,17 +78,17 @@ export default function AlumniWallPage() {
         {/* Header */}
         <div className="border-b border-border bg-card">
           <div className="container mx-auto px-4 py-8">
-            <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="max-w-6xl mx-auto px-4  flex items-center justify-between">
               <div>
-                 <h1 className="text-3xl font-bold text-foreground">Alumni Memoir Wall</h1>
-                 <p className="text-muted-foreground mt-2">
-                  Memories and messages shared with our distinguished alumni
+                 <h1 className="sm:text-3xl font-bold text-foreground">Alumni Memoir Wall</h1>
+                 <p className="text-sm text-muted-foreground mt-2">
+                  Memories of our distinguished alumni
                  </p>
               </div>
               <Link href="/dashboard">
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
                 <ArrowLeft className="w-4 h-4" />
-                 Back to Dashboard
+                 Dashboard
                 </Button>
               </Link>
             </div>

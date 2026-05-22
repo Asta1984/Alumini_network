@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/store/auth.store'
+import Image from 'next/image'
 
 function LoginContent() {
   const router = useRouter()
@@ -89,8 +90,9 @@ function LoginContent() {
         <div className="bg-card rounded-lg shadow-lg border border-border p-8">
           {/* Logo / Title */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Surabhi</h1>
-            <p className="text-muted-foreground mt-1">Alumni Memory Book</p>
+            <div className="inline-flex items-center justify-center bg-amber-100-500/10 border-amber-200-500/20 mb-4">
+            <Image src="/icon.png" alt="Surabhi Icon" width={150} height={100} className='bg-amber-50 rounded-sm border-t-2 border-r-2 p-1' />
+            </div>
           </div>
 
           {loginStep === 'identifier' ? (
@@ -126,10 +128,9 @@ function LoginContent() {
                 </div>
 
                 <Button
-                  type="submit"
+                  variant="secondary"
                   disabled={loading}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
+                  className="w-full border mt-2"                >
                   {loading ? 'Sending OTP...' : 'Send OTP'}
                 </Button>
               </form>
@@ -175,10 +176,9 @@ function LoginContent() {
                 </div>
 
                 <Button
-                  type="submit"
+                  variant="secondary"
                   disabled={loading}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
+                  className="w-full border mt-2"  >
                   {loading ? 'Verifying...' : 'Verify OTP'}
                 </Button>
               </form>

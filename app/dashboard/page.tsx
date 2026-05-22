@@ -31,12 +31,11 @@ export default function DashboardPage() {
         <header className="border-b border-border bg-card">
           <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Surabhi Alumni Memory Book</h1>
-              <p className="text-sm text-muted-foreground">Preserve and celebrate alumni memories</p>
+              <h1 className="text-xl font-bold text-foreground">Memory Book</h1>
+              <p className="text-xs text-muted-foreground">Preserve and celebrate alumni memories</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <p className="font-medium text-foreground">{user?.fullName}</p>
                 <p className="text-sm text-muted-foreground">@{user?.fullName}</p>
               </div>
               <Button

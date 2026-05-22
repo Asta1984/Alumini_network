@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/use-toast'
-import { ProtectedRoute } from '@/lib/protected-route'
 
 interface SocialProfile {
   platform: 'LINKEDIN' | 'INSTAGRAM' | 'GITHUB' | 'TWITTER'
@@ -233,25 +232,23 @@ function OnboardingForm() {
 
 export default function OnboardingPage() {
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-card">
-          <div className="max-w-2xl mx-auto px-4 py-4">
-            <h1 className="text-2xl font-bold text-foreground">Complete Your Profile</h1>
-            <p className="text-sm text-muted-foreground mt-1">Welcome to Surabhi Alumni Memory Book</p>
-          </div>
-        </header>
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-card">
+        <div className="max-w-2xl mx-auto px-4 py-4">
+          <h1 className="text-2xl font-bold text-foreground">Complete Your Profile</h1>
+          <p className="text-sm text-muted-foreground mt-1">Welcome to Surabhi Alumni Memory Book</p>
+        </div>
+      </header>
 
-        <main className="max-w-2xl mx-auto px-4 py-8">
-          <Suspense fallback={
-            <div className="bg-card border border-border rounded-lg p-8 text-center text-muted-foreground">
-              Loading...
-            </div>
-          }>
-            <OnboardingForm />
-          </Suspense>
-        </main>
-      </div>
-    </ProtectedRoute>
+      <main className="max-w-2xl mx-auto px-4 py-8">
+        <Suspense fallback={
+          <div className="bg-card border border-border rounded-lg p-8 text-center text-muted-foreground">
+            Loading...
+          </div>
+        }>
+          <OnboardingForm />
+        </Suspense>
+      </main>
+    </div>
   )
 }

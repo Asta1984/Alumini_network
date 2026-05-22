@@ -49,30 +49,22 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await verifyOtp(otp.trim())
-      // verifyOtp calls hydrate() internally, so user should be available immediately after
-      // Add a small delay to ensure state is updated
       await new Promise(resolve => setTimeout(resolve, 150))
       
       const { user } = useAuthStore.getState()
-      console.log('[v0] After OTP verification - user:', user, 'onboardingToken:', onboardingToken)
       
       // If onboarding token exists, ALWAYS redirect to onboarding form (new users need profile completion)
-      // This must be checked first, before profile completion status
       if (onboardingToken) {
-        console.log('[v0] Onboarding token found, redirecting to /onboarding?token=...')
         router.push(`/onboarding?token=${encodeURIComponent(onboardingToken)}`)
         return
       }
       
       // If no onboarding token, check profile completion status
       if (user && !user.isProfileCompleted) {
-        console.log('[v0] Profile incomplete (no onboarding token), redirecting to /onboarding')
         router.push('/onboarding')
       } else if (user && user.isProfileCompleted) {
-        console.log('[v0] Profile completed, redirecting to /dashboard')
         router.push('/dashboard')
       } else {
-        console.log('[v0] No user found after OTP verification, redirecting to /')
         router.push('/')
       }
     } catch (err) {
